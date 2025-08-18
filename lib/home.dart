@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:mirrorsbeautylounge/booking_history_screen.dart' show BookingHistoryScreen;
 import 'package:mirrorsbeautylounge/branch_selection_screen.dart';
 import 'package:mirrorsbeautylounge/chat_screen.dart';
-import 'package:mirrorsbeautylounge/home_services_screen.dart' show HomeServicesPage;
 import 'package:mirrorsbeautylounge/men_services_screen.dart';
-
+import 'package:mirrorsbeautylounge/offers_screen.dart';
 import 'package:mirrorsbeautylounge/women_services_screen.dart';
 import 'package:mirrorsbeautylounge/notifications_screen.dart';
 import 'package:mirrorsbeautylounge/profile_screen.dart';
@@ -243,9 +242,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildOffersSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final containerHeight = isSmallScreen ? 240.0 : 270.0;
+    final cardWidth = (screenWidth * 0.75).clamp(280.0, 320.0);
+    
     if (isLoadingOffers) {
       return Container(
-        height: 270,
+        height: containerHeight,
         child: const Center(
           child: CircularProgressIndicator(
             color: Color(0xFFFF8F8F),
@@ -256,7 +260,7 @@ class _HomePageState extends State<HomePage> {
 
     if (offersError != null) {
       return Container(
-        height: 260,
+        height: containerHeight,
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -267,11 +271,14 @@ class _HomePageState extends State<HomePage> {
                 size: 48,
               ),
               const SizedBox(height: 16),
-              Text(
-                'Failed to load offers',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Failed to load offers',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: isSmallScreen ? 14 : 16,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -293,13 +300,13 @@ class _HomePageState extends State<HomePage> {
 
     if (offers.isEmpty) {
       return Container(
-        height: 260,
+        height: containerHeight,
         child: Center(
           child: Text(
             'No offers available',
             style: TextStyle(
               color: Colors.grey[600],
-              fontSize: 16,
+              fontSize: isSmallScreen ? 14 : 16,
             ),
           ),
         ),
@@ -310,19 +317,20 @@ class _HomePageState extends State<HomePage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => BranchSelectionScreen()),
+          MaterialPageRoute(builder: (context) => const OffersScreen()),
         );
       },
       child: SizedBox(
-        height: 280,
+        height: containerHeight + 15,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 0),
           itemCount: offers.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          separatorBuilder: (_, __) => SizedBox(width: isSmallScreen ? 8 : 12),
           itemBuilder: (context, index) {
             final offer = offers[index];
             return Container(
-              width: 320,
+              width: cardWidth,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -337,72 +345,91 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+                  Expanded(
+                    flex: 3,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      child: _buildOfferImage(offer.imageBase64),
                     ),
-                    child: _buildOfferImage(offer.imageBase64),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          offer.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          offer.description,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        if (offer.discountType == 'percentage')
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  offer.title,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isSmallScreen ? 13 : 15,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Expanded(
+                                  child: Text(
+                                    offer.description,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: isSmallScreen ? 10 : 12,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8F8F),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${offer.discountValue.toInt()}% OFF',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                          ),
+                          if (offer.discountType == 'percentage')
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 6 : 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8F8F),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${offer.discountValue.toInt()}% OFF',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isSmallScreen ? 10 : 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        if (offer.discountType == 'fixed')
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFF8F8F),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Save \$${offer.discountValue.toInt()}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                          if (offer.discountType == 'fixed')
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isSmallScreen ? 6 : 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF8F8F),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Save \$${offer.discountValue.toInt()}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isSmallScreen ? 10 : 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -442,54 +469,68 @@ class _HomePageState extends State<HomePage> {
     if (value == 'Male') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const MenServicesScreen()),
+        MaterialPageRoute(builder: (_) => const MenServicesScreen(categoryName: 'Male')),
       );
     } else if (value == 'Female') {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const WomenServicesScreen()),
+        MaterialPageRoute(builder: (_) => const WomenServicesScreen(categoryName: 'Female')),
       );
     }
   }
 
   Widget _buildMainScreen() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isSmallScreen = screenWidth < 360;
+    final padding = isSmallScreen ? 12.0 : 16.0;
+    
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(padding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Text(
-                'Hey,',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8F8F),
+              Flexible(
+                child: Text(
+                  'Hey,',
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 24 : 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F8F),
+                  ),
                 ),
               ),
               Spacer(),
               DropdownButton<String>(
-                hint: const Text(
+                hint: Text(
                   "Gender",
-                  style: TextStyle(color: Colors.black),
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: isSmallScreen ? 12 : 14,
+                  ),
                 ),
-                items: const [
+                items: [
                   DropdownMenuItem(
                     value: 'Male',
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Male'),
-                        Icon(Icons.male, color: Color(0xFFFF8F8F)),
+                        Text('Male', style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
+                        SizedBox(width: 4),
+                        Icon(Icons.male, color: Color(0xFFFF8F8F), size: isSmallScreen ? 16 : 20),
                       ],
                     ),
                   ),
                   DropdownMenuItem(
                     value: 'Female',
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Female'),
-                        Icon(Icons.female, color: Color(0xFFFF8F8F)),
+                        Text('Female', style: TextStyle(fontSize: isSmallScreen ? 12 : 14)),
+                        SizedBox(width: 4),
+                        Icon(Icons.female, color: Color(0xFFFF8F8F), size: isSmallScreen ? 16 : 20),
                       ],
                     ),
                   ),
@@ -500,7 +541,7 @@ class _HomePageState extends State<HomePage> {
                   }
                 },
               ),
-              SizedBox(width: 15),
+              SizedBox(width: isSmallScreen ? 8 : 15),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -510,20 +551,20 @@ class _HomePageState extends State<HomePage> {
                     ),
                   );
                 },
-                child: Icon(Icons.notifications, size: 28),
+                child: Icon(Icons.notifications, size: isSmallScreen ? 24 : 28),
               ),
-              SizedBox(width: 15),
+              SizedBox(width: isSmallScreen ? 8 : 15),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CartScreen(cartItems: []),
+                      builder: (context) => const CartScreen(),
                     ),
                   );
 
                 },
-                child: Icon(Icons.shopping_cart, size: 28),
+                child: Icon(Icons.shopping_cart, size: isSmallScreen ? 24 : 28),
               ),
             ],
           ),
@@ -541,12 +582,13 @@ class _HomePageState extends State<HomePage> {
               Spacer(),
               TextButton(
                 onPressed: () {
+
+
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BranchSelectionScreen(),
-                    ),
-                  );
+          context,
+          MaterialPageRoute(builder: (context) =>  OffersScreen()),
+        );
+                 
                 },
                 child: Text(
                   "See All",
@@ -587,15 +629,19 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 10),
           GestureDetector(onTap: (){Navigator.push(context, MaterialPageRoute(builder: (context)=>BranchSelectionScreen()));},
             child: SizedBox(
-              height: 230,
+              height: screenWidth < 360 ? 200 : 230,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 8 : 0),
                 itemCount: branches.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: screenWidth < 360 ? 8 : 12),
                 itemBuilder: (context, index) {
                   final branch = branches[index];
+                  final branchCardWidth = (screenWidth * 0.6).clamp(180.0, 210.0);
+                  final imageHeight = screenWidth < 360 ? 100.0 : 120.0;
+                  
                   return Container(
-                    width: 210,
+                    width: branchCardWidth,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -610,53 +656,73 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.asset(
-                            branch['image']!,
-                            height: 120,
-                            width: 210,
-                            fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              branch['image']!,
+                              height: imageHeight,
+                              width: branchCardWidth,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                branch['title']!,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                        Expanded(
+                          flex: 2,
+                          child: Padding(
+                            padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        branch['title']!,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: screenWidth < 360 ? 13 : 15,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Expanded(
+                                        child: Text(
+                                          branch['subtitle']!,
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: screenWidth < 360 ? 10 : 12,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                branch['subtitle']!,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
+                                
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: screenWidth < 360 ? 8 : 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    branch['tag']!,
+                                    style: TextStyle(fontSize: screenWidth < 360 ? 9 : 11),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  branch['tag']!,
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -682,7 +748,7 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => WomenServicesScreen(),
+                      builder: (context) => WomenServicesScreen(categoryName: 'Women'),
                     ),
                   );
                 },
@@ -696,7 +762,7 @@ class _HomePageState extends State<HomePage> {
           GestureDetector(onTap: (){Navigator.push(
     context,
     MaterialPageRoute(
-    builder: (context) => WomenServicesScreen(),
+    builder: (context) => WomenServicesScreen(categoryName: 'Women'),
     ));
     },
             child: isLoadingCategories
@@ -739,14 +805,14 @@ class _HomePageState extends State<HomePage> {
                             ),
                           )
                         : GridView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 4 : 8),
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 1.2,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: screenWidth < 360 ? 1 : 2,
+                              mainAxisSpacing: screenWidth < 360 ? 12 : 16,
+                              crossAxisSpacing: screenWidth < 360 ? 8 : 12,
+                              childAspectRatio: screenWidth < 360 ? 2.5 : 1.2,
                             ),
                             itemCount: womenCategories.length,
                             itemBuilder: (context, index) {
@@ -788,7 +854,7 @@ class _HomePageState extends State<HomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => MenServicesScreen(),
+                        builder: (context) => MenServicesScreen(categoryName: 'Men'),
                       ),
                     );
                   },
@@ -803,7 +869,7 @@ class _HomePageState extends State<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => MenServicesScreen(),
+                builder: (context) => MenServicesScreen(categoryName: 'Men'),
               ));
           },
             child: isLoadingCategories
@@ -846,14 +912,14 @@ class _HomePageState extends State<HomePage> {
                             ),
                           )
                         : GridView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 4 : 8),
                             physics: const NeverScrollableScrollPhysics(),
                             shrinkWrap: true,
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 16,
-                              crossAxisSpacing: 12,
-                              childAspectRatio: 1.2,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: screenWidth < 360 ? 1 : 2,
+                              mainAxisSpacing: screenWidth < 360 ? 12 : 16,
+                              crossAxisSpacing: screenWidth < 360 ? 8 : 12,
+                              childAspectRatio: screenWidth < 360 ? 2.5 : 1.2,
                             ),
                             itemCount: menCategories.length,
                             itemBuilder: (context, index) {
@@ -899,9 +965,8 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ServicesByCategoryScreen(
+                      builder: (context) => WomenServicesScreen(
                         categoryName: 'Massage',
-                        categoryId: '',
                       ),
                     ),
                   );
@@ -918,22 +983,25 @@ class _HomePageState extends State<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ServicesByCategoryScreen(
+                builder: (context) => WomenServicesScreen(
                   categoryName: 'Massage',
-                  categoryId: '',
                 ),
               ));
     },
             child: SizedBox(
-              height: 160,
+              height: screenWidth < 360 ? 140 : 160,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 8 : 0),
                 itemCount: womenspa.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: screenWidth < 360 ? 8 : 12),
                 itemBuilder: (context, index) {
                   final women = womenspa[index];
+                  final spaCardWidth = (screenWidth * 0.6).clamp(180.0, 210.0);
+                  final imageHeight = screenWidth < 360 ? 100.0 : 120.0;
+                  
                   return Container(
-                    width: 210,
+                    width: spaCardWidth,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -948,24 +1016,32 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.asset(
-                            women['image']!,
-                            height: 120,
-                            width: 210,
-                            fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              women['image']!,
+                              height: imageHeight,
+                              width: spaCardWidth,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            women['title']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                        Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
+                            child: Text(
+                              women['title']!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenWidth < 360 ? 13 : 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -993,9 +1069,8 @@ class _HomePageState extends State<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ServicesByCategoryScreen(
+                      builder: (context) => MenServicesScreen(
                         categoryName: 'Massage',
-                        categoryId: '',
                       ),
                     ),
                   );
@@ -1012,23 +1087,26 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
     context,
     MaterialPageRoute(
-    builder: (context) => ServicesByCategoryScreen(
+    builder: (context) => MenServicesScreen(
       categoryName: 'Massage',
-      categoryId: '',
     ),
     ),
     );
     },
             child: SizedBox(
-              height: 160,
+              height: screenWidth < 360 ? 140 : 160,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: womenspa.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 8 : 0),
+                itemCount: menspa.length,
+                separatorBuilder: (_, __) => SizedBox(width: screenWidth < 360 ? 8 : 12),
                 itemBuilder: (context, index) {
                   final mens = menspa[index];
+                  final spaCardWidth = (screenWidth * 0.6).clamp(180.0, 210.0);
+                  final imageHeight = screenWidth < 360 ? 100.0 : 120.0;
+                  
                   return Container(
-                    width: 210,
+                    width: spaCardWidth,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -1043,24 +1121,32 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.asset(
-                            mens['image']!,
-                            height: 120,
-                            width: 210,
-                            fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              mens['image']!,
+                              height: imageHeight,
+                              width: spaCardWidth,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            mens['title']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                        Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
+                            child: Text(
+                              mens['title']!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenWidth < 360 ? 13 : 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -1076,30 +1162,35 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 30),
           Row(
             children: [
-              const Text(
-                'Semi Permanent Makeup',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8F8F),
+              Expanded(
+                child: Text(
+                  'Semi Permanent Makeup',
+                  style: TextStyle(
+                    fontSize: screenWidth < 360 ? 18 : 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F8F),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Spacer(),
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ServicesByCategoryScreen(
+                      builder: (context) => WomenServicesScreen(
                         categoryName: 'Semi Permanent Makeup',
-                        categoryId: '',
                       ),
                     ),
                   );
                 },
                 child: Text(
                   "Book Now",
-                  style: TextStyle(color: Color(0xFFFF8F8F)),
+                  style: TextStyle(
+                    color: Color(0xFFFF8F8F),
+                    fontSize: screenWidth < 360 ? 12 : 14,
+                  ),
                 ),
               ),
             ],
@@ -1109,23 +1200,25 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
     context,
     MaterialPageRoute(
-    builder: (context) => ServicesByCategoryScreen(
+    builder: (context) => WomenServicesScreen(
       categoryName: 'Semi Permanent Makeup',
-      categoryId: '',
     ),
     ),
     );
     },
             child: SizedBox(
-              height: 160,
+              height: screenWidth < 360 ? 140 : 160,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 8 : 12),
                 itemCount: spnm.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: screenWidth < 360 ? 8 : 12),
                 itemBuilder: (context, index) {
                   final spm = spnm[index];
+                  final spmCardWidth = screenWidth < 360 ? screenWidth * 0.7 : 210.0;
+                  final imageHeight = screenWidth < 360 ? 100.0 : 120.0;
                   return Container(
-                    width: 210,
+                    width: spmCardWidth,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -1140,24 +1233,32 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.asset(
-                            spm['image']!,
-                            height: 120,
-                            width: 210,
-                            fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              spm['image']!,
+                              height: imageHeight,
+                              width: spmCardWidth,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            spm['title']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                        Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
+                            child: Text(
+                              spm['title']!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenWidth < 360 ? 13 : 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -1172,27 +1273,36 @@ class _HomePageState extends State<HomePage> {
           SizedBox(height: 30,),
           Row(
             children: [
-              const Text(
-                'Home Services',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8F8F),
+              Expanded(
+                child: Text(
+                  'Home Services',
+                  style: TextStyle(
+                    fontSize: screenWidth < 360 ? 18 : 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F8F),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Spacer(),
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => HomeServicesPage(),
-                    ),
+                      builder: (context) => WomenServicesScreen(
+                        categoryName: 'Home Services',
+                      ),
+                      ),
+
                   );
                 },
                 child: Text(
                   "Book Now",
-                  style: TextStyle(color: Color(0xFFFF8F8F)),
+                  style: TextStyle(
+                    color: Color(0xFFFF8F8F),
+                    fontSize: screenWidth < 360 ? 12 : 14,
+                  ),
                 ),
               ),
             ],
@@ -1202,23 +1312,25 @@ class _HomePageState extends State<HomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ServicesByCategoryScreen(
-                  categoryName: 'Massage',
-                  categoryId: '',
+                builder: (context) => WomenServicesScreen(
+                  categoryName: 'Home Services',
                 ),
               ),
             );
           },
             child: SizedBox(
-              height: 160,
+              height: screenWidth < 360 ? 140 : 160,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 8 : 12),
                 itemCount: homeservices.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: screenWidth < 360 ? 8 : 12),
                 itemBuilder: (context, index) {
                   final hs = homeservices[index];
+                  final hsCardWidth = screenWidth < 360 ? screenWidth * 0.7 : 210.0;
+                  final imageHeight = screenWidth < 360 ? 100.0 : 120.0;
                   return Container(
-                    width: 210,
+                    width: hsCardWidth,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -1233,24 +1345,32 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.asset(
-                            hs['image']!,
-                            height: 120,
-                            width: 210,
-                            fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              hs['image']!,
+                              height: imageHeight,
+                              width: hsCardWidth,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            hs['title']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                        Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
+                            child: Text(
+                              hs['title']!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenWidth < 360 ? 13 : 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -1263,56 +1383,63 @@ class _HomePageState extends State<HomePage> {
           ),SizedBox(height: 30,),
           Row(
             children: [
-              const Text(
-                'Nail Services',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF8F8F),
+              Expanded(
+                child: Text(
+                  'Nail Services',
+                  style: TextStyle(
+                    fontSize: screenWidth < 360 ? 18 : 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFF8F8F),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Spacer(),
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ServicesByCategoryScreen(
+                      builder: (context) => WomenServicesScreen(
                         categoryName: 'Nails',
-                        categoryId: '',
                       ),
                     ),
                   );
                 },
                 child: Text(
                   "Book Now",
-                  style: TextStyle(color: Color(0xFFFF8F8F)),
+                  style: TextStyle(
+                    color: Color(0xFFFF8F8F),
+                    fontSize: screenWidth < 360 ? 12 : 14,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           GestureDetector(onTap: () {
-    Navigator.push(
-    context,
-    MaterialPageRoute(
-    builder: (context) => ServicesByCategoryScreen(
-      categoryName: 'Nails',
-      categoryId: '',
-    ),
-    ),
-    );
-    },
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WomenServicesScreen(
+                  categoryName: 'Nails',
+                ),
+              ),
+            );
+          },
             child: SizedBox(
-              height: 160,
+              height: screenWidth < 360 ? 140 : 160,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: screenWidth < 360 ? 8 : 12),
                 itemCount: nails.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => SizedBox(width: screenWidth < 360 ? 8 : 12),
                 itemBuilder: (context, index) {
                   final nail = nails[index];
+                  final nailCardWidth = screenWidth < 360 ? screenWidth * 0.7 : 210.0;
+                  final imageHeight = screenWidth < 360 ? 100.0 : 120.0;
                   return Container(
-                    width: 210,
+                    width: nailCardWidth,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -1327,24 +1454,32 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: Image.asset(
-                            nail['image']!,
-                            height: 120,
-                            width: 210,
-                            fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: Image.asset(
+                              nail['image']!,
+                              height: imageHeight,
+                              width: nailCardWidth,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(
-                            nail['title']!,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                        Expanded(
+                          flex: 1,
+                          child: Padding(
+                            padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
+                            child: Text(
+                              nail['title']!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: screenWidth < 360 ? 13 : 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -1374,6 +1509,18 @@ class _HomePageState extends State<HomePage> {
                 ? _buildMainScreen()
                 : Center(child: Text("Screen $_selectedIndex")),
       ),
+      floatingActionButton: _selectedIndex == 0 ? FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NotificationsScreen(),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFFFF8F8F),
+        child: const Icon(Icons.notifications_active, color: Colors.white),
+      ) : null,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: Color(0xFFFF8F8F),

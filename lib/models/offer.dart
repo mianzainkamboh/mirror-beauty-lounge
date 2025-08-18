@@ -15,6 +15,16 @@ class Offer {
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
 
+  // Getter for endDate - converts validTo string to DateTime
+  DateTime get endDate {
+    try {
+      return DateTime.parse(validTo);
+    } catch (e) {
+      // Fallback to current date if parsing fails
+      return DateTime.now();
+    }
+  }
+
   Offer({
     this.id,
     required this.title,
@@ -53,7 +63,7 @@ class Offer {
 
   // Convert to Firestore document
   Map<String, dynamic> toFirestore() {
-    return {
+    Map<String, dynamic> data = {
       'title': title,
       'description': description,
       'discountType': discountType,
@@ -61,12 +71,20 @@ class Offer {
       'validFrom': validFrom,
       'validTo': validTo,
       'isActive': isActive,
-      'usageLimit': usageLimit,
       'usedCount': usedCount,
-      'imageBase64': imageBase64,
       'createdAt': createdAt ?? FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
+    
+    // Only include optional fields if they are not null
+    if (usageLimit != null) {
+      data['usageLimit'] = usageLimit;
+    }
+    if (imageBase64 != null) {
+      data['imageBase64'] = imageBase64;
+    }
+    
+    return data;
   }
 
   // Create a copy with updated fields

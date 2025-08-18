@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mirrorsbeautylounge/home.dart';
-import 'phone_input.dart';
-import 'social_button.dart';
+import 'package:mirrorsbeautylounge/signup_screen.dart';
+import 'services/auth_service.dart';
 import 'constants.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,8 +12,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  String phoneNumber = '';
-  final String countryCode = 'United Kingdom (+44)';
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,92 +35,188 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              'Log in or sign up to Mirrors',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textColor,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Welcome Back!',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 30),
+              const SizedBox(height: 8),
+              const Text(
+                'Sign in to your account',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.greyColor,
+                ),
+              ),
+              const SizedBox(height: 30),
 
-            PhoneInputField(
-              countryCode: countryCode,
-              onChanged: (value) => setState(() => phoneNumber = value),
-            ),
-
-            const SizedBox(height: 16),
-            const Text(
-              "We'll call or text you to confirm your number. Standard message and data rates apply.",
-              style: TextStyle(color: AppColors.greyColor, fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: phoneNumber.isEmpty ? null : () {
-                  Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) =>  HomePage()));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+              // Email Field
+              const Text(
+                'Email',
+                style: TextStyle(
+                  color: AppColors.greyColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  hintText: 'your@email.com',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 24),
+              // Password Field
+              const Text(
+                'Password',
+                style: TextStyle(
+                  color: AppColors.greyColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  hintText: 'Enter your password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
                 ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 24),
+              // Login Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Login',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                const Expanded(child: Divider(color: Colors.grey)),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text('or', style: TextStyle(color: Colors.grey.shade600)),
+              const SizedBox(height: 24),
+              // Sign up link
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SignupScreen()),
+                  ),
+                  child: const Text(
+                    "Don't have an account? Sign up",
+                    style: TextStyle(color: AppColors.primaryColor),
+                  ),
                 ),
-                const Expanded(child: Divider(color: Colors.grey)),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            SocialButton(
-              icon: Icons.email,
-              text: 'Continue with Email',
-              onPressed: () {},
-            ),
-            const SizedBox(height: 12),
-            SocialButton(
-              icon: Icons.facebook,
-              text: 'Continue with Facebook',
-              onPressed: () {},
-            ),
-            const SizedBox(height: 12),
-            SocialButton(
-              icon: Icons.g_mobiledata,
-              text: 'Continue with Google',
-              onPressed: () {},
-            ),
-            const SizedBox(height: 12),
-            SocialButton(
-              icon: Icons.apple,
-              text: 'Continue with Apple',
-              onPressed: () {},
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  // Handle login
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final result = await AuthService().signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (result['success']) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Login failed')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }

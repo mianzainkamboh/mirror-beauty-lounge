@@ -4,17 +4,9 @@ import 'package:mirrorsbeautylounge/app_colors.dart';
 import 'package:mirrorsbeautylounge/services/firebase_service.dart';
 import 'package:mirrorsbeautylounge/models/category.dart';
 import 'package:mirrorsbeautylounge/services_by_category_screen.dart';
-class AppColors {
-  static const primaryColor = Color(0xFFFF8F8F); // #ff8f8f
-  static const textColor = Color(0xFF333333);    // Dark gray
-  static const greyColor = Color(0xFF888888);    // Medium gray
-  static const lightPink = Color(0xFFFEE7E7);    // Light blush
-  static const lightLavender = Color(0xFFF2E7FE); // Light lavender
-  static const lightGray = Color(0xFFF5F5F5);
-  static const background = Color(0xFFF5F5F5);  // Light gray background
-}
 class WomenServicesScreen extends StatefulWidget {
-  const WomenServicesScreen({super.key});
+  final String? categoryName;
+  const WomenServicesScreen({super.key, this.categoryName});
 
   @override
   State<WomenServicesScreen> createState() => _WomenServicesScreenState();
@@ -67,78 +59,105 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    // Enhanced responsive breakpoints
+    final isSmallScreen = screenWidth < 360;
+    final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
+    final isLargeScreen = screenWidth >= 600;
+    
+    // Dynamic sizing based on screen size
+    final horizontalPadding = isSmallScreen ? 12.0 : (isMediumScreen ? 20.0 : 32.0);
+    final verticalPadding = isSmallScreen ? 8.0 : (isMediumScreen ? 12.0 : 16.0);
+    final titleFontSize = isSmallScreen ? 18.0 : (isMediumScreen ? 22.0 : 26.0);
+    final sectionTitleSize = isSmallScreen ? 16.0 : (isMediumScreen ? 20.0 : 24.0);
+    final searchFontSize = isSmallScreen ? 14.0 : (isMediumScreen ? 16.0 : 18.0);
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // App Bar - Removed search icon
+          // App Bar - Enhanced responsive design
           SliverAppBar(
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(
+                Icons.arrow_back,
+                size: isSmallScreen ? 20 : (isMediumScreen ? 24 : 28),
+              ),
               color: AppColors.textColor,
               onPressed: () => Navigator.pop(context),
             ),
             centerTitle: true,
-            title: const Text(
+            title: Text(
               'For Women',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 22,
-                color: AppColors.primaryColor, // Changed to primary color
+                fontSize: titleFontSize,
+                color: AppColors.primaryColor,
               ),
             ),
             backgroundColor: Colors.white.withAlpha(230),
             elevation: 0,
             floating: true,
             snap: true,
+            expandedHeight: isSmallScreen ? 56 : (isMediumScreen ? 60 : 64),
           ),
 
-          // Search Bar
+
+
+          // Branches Section - Enhanced responsive design
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search services...',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                ),
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding * 0.75
               ),
-            ),
-          ),
-
-          // Branches Section - Changed title color
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Branches',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: sectionTitleSize,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryColor, // Changed to primary color
+                      color: AppColors.primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isSmallScreen ? 8 : (isMediumScreen ? 12 : 16)),
                   SizedBox(
-                    height: 210,
+                    height: isSmallScreen ? 180 : (isMediumScreen ? 210 : 240),
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8),
                       itemCount: branches.length,
-                      itemBuilder: (context, index) =>
-                          _buildBranchCard(branches[index]),
+                      itemBuilder: (context, index) => _buildBranchCard(
+                        branches[index], 
+                        screenWidth, 
+                        isSmallScreen, 
+                        isMediumScreen
+                      ),
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+
+          // Categories Section - Enhanced responsive design
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: verticalPadding * 0.75
+              ),
+              child: Text(
+                'Categories',
+                style: TextStyle(
+                  fontSize: sectionTitleSize,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryColor,
+                ),
               ),
             ),
           ),
@@ -172,7 +191,7 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.red[600],
-                        fontSize: 16,
+                        fontSize: screenWidth < 360 ? 14 : 16,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -191,14 +210,14 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
               ),
             )
           else if (categories.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(50),
+                padding: const EdgeInsets.all(50),
                 child: Center(
                   child: Text(
                     'No categories available',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: screenWidth < 360 ? 14 : 16,
                       color: AppColors.greyColor,
                     ),
                   ),
@@ -207,16 +226,16 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(screenWidth < 360 ? 16 : 24),
               sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: screenWidth < 360 ? 1 : 2,
+                  crossAxisSpacing: screenWidth < 360 ? 12 : 16,
+                  mainAxisSpacing: screenWidth < 360 ? 12 : 16,
+                  childAspectRatio: screenWidth < 360 ? 1.2 : 0.75,
                 ),
                 delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildCategoryCard(categories[index]),
+                  (context, index) => _buildCategoryCard(categories[index], screenWidth),
                   childCount: categories.length,
                 ),
               ),
@@ -226,49 +245,79 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
     );
   }
 
-  Widget _buildBranchCard(Map<String, dynamic> branch) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          // TODO: Navigate to branch services
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Image.asset(
-                  branch['image'],
-                  width: 180,
-                  height: 135,
-                  fit: BoxFit.cover,
-
-                ),),
-              const SizedBox(height: 16),
-              Text(
-                branch['name'],
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16, color: AppColors.primaryColor,
-                ),
-              ),
-            ],
+  Widget _buildBranchCard(Map<String, dynamic> branch, double screenWidth, bool isSmallScreen, bool isMediumScreen) {
+    final cardWidth = isSmallScreen ? 140.0 : (isMediumScreen ? 160.0 : 180.0);
+    final imageHeight = isSmallScreen ? 100.0 : (isMediumScreen ? 120.0 : 140.0);
+    final cardPadding = isSmallScreen ? 8.0 : (isMediumScreen ? 12.0 : 16.0);
+    final titleFontSize = isSmallScreen ? 14.0 : (isMediumScreen ? 16.0 : 18.0);
+    final marginRight = isSmallScreen ? 12.0 : (isMediumScreen ? 16.0 : 20.0);
+    
+    return Container(
+      width: cardWidth,
+      margin: EdgeInsets.only(right: marginRight),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: isSmallScreen ? 6 : 8,
+            offset: const Offset(0, 2),
           ),
-        ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(isSmallScreen ? 12 : 16)
+            ),
+            child: Image.asset(
+              branch['image'],
+              height: imageHeight,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: imageHeight,
+                  color: Colors.grey[200],
+                  child: Icon(
+                    Icons.image_not_supported,
+                    size: isSmallScreen ? 30 : 40,
+                    color: Colors.grey,
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(cardPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  branch['name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: titleFontSize,
+                    color: AppColors.textColor,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: isSmallScreen ? 2 : 4),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCategoryImage(String? imageBase64) {
+  Widget _buildCategoryImage(String? imageBase64, double screenWidth) {
+    final imageSize = screenWidth < 360 ? 100.0 : 120.0;
+    
     if (imageBase64 != null && imageBase64.isNotEmpty) {
       try {
         // Handle both data URL format and raw base64
@@ -280,37 +329,43 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
         }
         
         final bytes = base64Decode(base64String);
-        return Image.memory(
-          bytes,
-          height: 120,
-          width: 210,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildFallbackImage();
-          },
+        return ClipOval(
+          child: Image.memory(
+            bytes,
+            height: imageSize,
+            width: imageSize,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildFallbackImage(screenWidth);
+            },
+          ),
         );
       } catch (e) {
-        return _buildFallbackImage();
+        return _buildFallbackImage(screenWidth);
       }
     } else {
-      return _buildFallbackImage();
+      return _buildFallbackImage(screenWidth);
     }
   }
 
-  Widget _buildFallbackImage() {
-    return Container(
-      height: 120,
-      width: 210,
-      color: Colors.grey[300],
-      child: const Icon(
-        Icons.spa,
-        color: Colors.grey,
-        size: 50,
+  Widget _buildFallbackImage(double screenWidth) {
+    final imageSize = screenWidth < 360 ? 100.0 : 120.0;
+    
+    return ClipOval(
+      child: Container(
+        height: imageSize,
+        width: imageSize,
+        color: Colors.grey[300],
+        child: Icon(
+          Icons.spa,
+          color: Colors.grey,
+          size: screenWidth < 360 ? 40 : 50,
+        ),
       ),
     );
   }
 
-  Widget _buildCategoryCard(Category category) {
+  Widget _buildCategoryCard(Category category, double screenWidth) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -332,50 +387,36 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+                  Expanded(
+                    flex: 3,
+                    child: Center(
+                      child: _buildCategoryImage(category.imageBase64, screenWidth),
                     ),
-                    child: _buildCategoryImage(category.imageBase64),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    category.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textColor,
+                  SizedBox(height: screenWidth < 360 ? 6 : 8),
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Text(
+                        category.name,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: screenWidth < 360 ? 12 : 14,
+                          color: AppColors.primaryColor,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
-            if (category.serviceCount > 0)
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${category.serviceCount}',
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),

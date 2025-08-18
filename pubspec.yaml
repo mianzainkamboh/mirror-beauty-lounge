@@ -34,17 +34,31 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  video_player:
-  font_awesome_flutter:
-  google_fonts:
-  google_maps_flutter:
-  location:
-  geolocator:
-  flutter_polyline_points:
+  video_player: ^2.8.1
+  font_awesome_flutter: ^10.6.0
+  google_fonts: ^6.1.0
+  google_maps_flutter: ^2.5.0
+  location: ^5.0.3
+  geolocator: ^10.1.0
+  flutter_polyline_points: ^2.0.0
   
   # Firebase dependencies
-  firebase_core: ^2.24.2
-  cloud_firestore: ^4.13.6
+  firebase_core: ^3.6.0
+  cloud_firestore: ^5.4.3
+  firebase_messaging: ^15.1.3
+  firebase_auth: ^5.3.1
+  firebase_storage: ^12.3.2
+  
+  # Local notifications
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.2
+  permission_handler: ^11.1.0
+  intl: ^0.19.0
+  
+  # Image picker and file handling
+  image_picker: ^1.0.4
+  file_picker: ^8.0.0+1
+  cached_network_image: ^3.3.0
 
 
 
@@ -80,7 +94,6 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/videos/
     - assets/videos/
     - images/
 

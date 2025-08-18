@@ -5,18 +5,9 @@ import 'package:mirrorsbeautylounge/app_colors.dart';
 import 'package:mirrorsbeautylounge/services/firebase_service.dart';
 import 'package:mirrorsbeautylounge/models/category.dart';
 import 'package:mirrorsbeautylounge/services_by_category_screen.dart';
-
-class AppColors {
-  static const primaryColor = Color(0xFFFF8F8F);
-  static const textColor = Color(0xFF333333);
-  static const greyColor = Color(0xFF888888);
-  static const lightPink = Color(0xFFFEE7E7);
-  static const lightLavender = Color(0xFFF2E7FE);
-  static const lightGray = Color(0xFFF5F5F5);
-  static const background = Color(0xFFF5F5F5);  //Light background-add this line
-}
 class MenServicesScreen extends StatefulWidget {
-  const MenServicesScreen({super.key});
+  final String? categoryName;
+  const MenServicesScreen({super.key, this.categoryName});
 
   @override
   State<MenServicesScreen> createState() => _MenServicesScreenState();
@@ -67,6 +58,9 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -79,11 +73,11 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             centerTitle: true,
-            title: const Text(
+            title: Text(
               'For Men',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 22,
+                fontSize: screenWidth < 360 ? 18 : 22,
                 color: AppColors.primaryColor,
               ),
             ),
@@ -96,26 +90,46 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
           // Branch Section
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth < 360 ? 16 : 24, 
+                vertical: screenWidth < 360 ? 12 : 16
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Branch',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: screenWidth < 360 ? 16 : 20,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _buildBranchCard(),
+                  SizedBox(height: screenWidth < 360 ? 12 : 16),
+                  _buildBranchCard(screenWidth),
                 ],
               ),
             ),
           ),
 
-          // Services Section
+          // Categories Section
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth < 360 ? 16 : 24
+              ),
+              child: Text(
+                'Categories',
+                style: TextStyle(
+                  fontSize: screenWidth < 360 ? 16 : 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          ),
+
+          // Categories Grid
           if (isLoading)
             const SliverToBoxAdapter(
               child: Padding(
@@ -163,14 +177,14 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
               ),
             )
           else if (categories.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(50),
+                padding: const EdgeInsets.all(50),
                 child: Center(
                   child: Text(
                     'No categories available',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: screenWidth < 360 ? 14 : 16,
                       color: AppColors.greyColor,
                     ),
                   ),
@@ -179,16 +193,16 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(screenWidth < 360 ? 16 : 24),
               sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: screenWidth < 360 ? 1 : 2,
+                  crossAxisSpacing: screenWidth < 360 ? 12 : 16,
+                  mainAxisSpacing: screenWidth < 360 ? 12 : 16,
+                  childAspectRatio: screenWidth < 360 ? 1.2 : 0.75,
                 ),
                 delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildCategoryCard(categories[index]),
+                      (context, index) => _buildCategoryCard(categories[index], screenWidth),
                   childCount: categories.length,
                 ),
               ),
@@ -198,7 +212,7 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
     );
   }
 
-  Widget _buildBranchCard() {
+  Widget _buildBranchCard(double screenWidth) {
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(
@@ -210,32 +224,31 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
          Navigator.push(context, MaterialPageRoute(builder: (context)=>BranchMapScreen()));
         },
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(screenWidth < 360 ? 12 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-
               Image.asset(
                   branch['image'],
-                  width:310,
-                  height: 160,
+                  width: screenWidth < 360 ? screenWidth * 0.8 : 310,
+                  height: screenWidth < 360 ? 120 : 160,
                   fit: BoxFit.cover,
-
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: screenWidth < 360 ? 12 : 16),
               Text(
                 branch['name'],
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,color: AppColors.primaryColor,
+                  fontSize: screenWidth < 360 ? 16 : 18,
+                  color: AppColors.primaryColor,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: screenWidth < 360 ? 6 : 8),
               Text(
                 branch['address'],
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: screenWidth < 360 ? 12 : 14,
                   color: AppColors.greyColor,
                 ),
               ),
@@ -244,10 +257,11 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
         ),
       ),
     );
-
   }
 
-  Widget _buildCategoryImage(String? imageBase64) {
+  Widget _buildCategoryImage(String? imageBase64, double screenWidth) {
+    final imageSize = screenWidth < 360 ? 100.0 : 120.0;
+    
     if (imageBase64 != null && imageBase64.isNotEmpty) {
       try {
         // Handle both data URL format and raw base64
@@ -259,37 +273,43 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
         }
         
         final bytes = base64Decode(base64String);
-        return Image.memory(
-          bytes,
-          height: 120,
-          width: 210,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildFallbackImage();
-          },
+        return ClipOval(
+          child: Image.memory(
+            bytes,
+            height: imageSize,
+            width: imageSize,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildFallbackImage(screenWidth);
+            },
+          ),
         );
       } catch (e) {
-        return _buildFallbackImage();
+        return _buildFallbackImage(screenWidth);
       }
     } else {
-      return _buildFallbackImage();
+      return _buildFallbackImage(screenWidth);
     }
   }
 
-  Widget _buildFallbackImage() {
-    return Container(
-      height: 120,
-      width: 210,
-      color: Colors.grey[300],
-      child: const Icon(
-        Icons.spa,
-        color: Colors.grey,
-        size: 50,
+  Widget _buildFallbackImage(double screenWidth) {
+    final imageSize = screenWidth < 360 ? 100.0 : 120.0;
+    
+    return ClipOval(
+      child: Container(
+        height: imageSize,
+        width: imageSize,
+        color: Colors.grey[300],
+        child: Icon(
+          Icons.spa,
+          color: Colors.grey,
+          size: screenWidth < 360 ? 40 : 50,
+        ),
       ),
     );
   }
 
-  Widget _buildCategoryCard(Category category) {
+  Widget _buildCategoryCard(Category category, double screenWidth) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -311,25 +331,32 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
         child: Stack(
           children: [
             Padding(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(screenWidth < 360 ? 6 : 8),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+                  Expanded(
+                    flex: 3,
+                    child: Center(
+                      child: _buildCategoryImage(category.imageBase64, screenWidth),
                     ),
-                    child: _buildCategoryImage(category.imageBase64),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    category.name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textColor,
+                  SizedBox(height: screenWidth < 360 ? 6 : 8),
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Text(
+                        category.name,
+                        style: TextStyle(
+                          fontSize: screenWidth < 360 ? 13 : 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textColor,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
@@ -339,15 +366,18 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
                 top: 10,
                 right: 10,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth < 360 ? 6 : 8, 
+                    vertical: screenWidth < 360 ? 3 : 4
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${category.serviceCount}',
-                    style: const TextStyle(
-                      fontSize: 10,
+                    style: TextStyle(
+                      fontSize: screenWidth < 360 ? 9 : 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),

@@ -3,10 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:mirrorsbeautylounge/app_colors.dart';
 import 'package:mirrorsbeautylounge/services/firebase_service.dart';
 import 'package:mirrorsbeautylounge/models/category.dart';
+import 'package:mirrorsbeautylounge/models/offer.dart';
 import 'package:mirrorsbeautylounge/services_by_category_screen.dart';
+import 'package:mirrorsbeautylounge/branches.dart';
+import 'package:mirrorsbeautylounge/models/branch.dart';
 class WomenServicesScreen extends StatefulWidget {
   final String? categoryName;
-  const WomenServicesScreen({super.key, this.categoryName});
+  final Offer? preAppliedOffer;
+  const WomenServicesScreen({super.key, this.categoryName, this.preAppliedOffer});
 
   @override
   State<WomenServicesScreen> createState() => _WomenServicesScreenState();
@@ -104,7 +108,69 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
             expandedHeight: isSmallScreen ? 56 : (isMediumScreen ? 60 : 64),
           ),
 
-
+          // Pre-applied Offer Display
+          if (widget.preAppliedOffer != null)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding * 0.5
+                ),
+                padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primaryColor.withOpacity(0.1), AppColors.primaryColor.withOpacity(0.05)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.local_offer,
+                      color: AppColors.primaryColor,
+                      size: isSmallScreen ? 20 : 24,
+                    ),
+                    SizedBox(width: isSmallScreen ? 8 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Offer Applied: ${widget.preAppliedOffer!.title}',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          if (widget.preAppliedOffer!.description.isNotEmpty)
+                            Text(
+                              widget.preAppliedOffer!.description,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 12 : 14,
+                                color: AppColors.textColor.withOpacity(0.8),
+                              ),
+                            ),
+                          Text(
+                            widget.preAppliedOffer!.discountType == 'percentage'
+                                ? '${widget.preAppliedOffer!.discountValue.toInt()}% OFF'
+                                : 'PKR ${widget.preAppliedOffer!.discountValue.toInt()} OFF',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 13 : 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Branches Section - Enhanced responsive design
           SliverToBoxAdapter(
@@ -252,65 +318,87 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
     final titleFontSize = isSmallScreen ? 14.0 : (isMediumScreen ? 16.0 : 18.0);
     final marginRight = isSmallScreen ? 12.0 : (isMediumScreen ? 16.0 : 20.0);
     
-    return Container(
-      width: cardWidth,
-      margin: EdgeInsets.only(right: marginRight),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: isSmallScreen ? 6 : 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(isSmallScreen ? 12 : 16)
+    return GestureDetector(
+      onTap: () => _navigateToBranchMap(branch['name']),
+      child: Container(
+        width: cardWidth,
+        margin: EdgeInsets.only(right: marginRight),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: isSmallScreen ? 6 : 8,
+              offset: const Offset(0, 2),
             ),
-            child: Image.asset(
-              branch['image'],
-              height: imageHeight,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: imageHeight,
-                  color: Colors.grey[200],
-                  child: Icon(
-                    Icons.image_not_supported,
-                    size: isSmallScreen ? 30 : 40,
-                    color: Colors.grey,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(isSmallScreen ? 12 : 16)
+              ),
+              child: Image.asset(
+                branch['image'],
+                height: imageHeight,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: imageHeight,
+                    color: Colors.grey[200],
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: isSmallScreen ? 30 : 40,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(cardPadding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    branch['name'],
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: titleFontSize,
+                      color: AppColors.textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  branch['name'],
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: titleFontSize,
-                    color: AppColors.textColor,
+                  SizedBox(height: isSmallScreen ? 2 : 4),
+                  // Add location icon to indicate it's tappable
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: isSmallScreen ? 12 : 14,
+                        color: AppColors.primaryColor,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'View on Map',
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 10 : 12,
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: isSmallScreen ? 2 : 4),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -380,6 +468,7 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
               builder: (context) => ServicesByCategoryScreen(
                 categoryName: category.name,
                 categoryId: category.id ?? '',
+                preAppliedOffer: widget.preAppliedOffer,
               ),
             ),
           );
@@ -421,6 +510,53 @@ class _WomenServicesScreenState extends State<WomenServicesScreen> {
         ),
       ),
     );
+  }
+
+  void _navigateToCategory(Category category) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ServicesByCategoryScreen(
+          categoryId: category.id ?? '',
+          categoryName: category.name,
+          preAppliedOffer: widget.preAppliedOffer,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToBranchMap(String branchName) {
+    // Map the branch names to the Branch model
+    Branch? branch;
+    
+    switch (branchName) {
+      case 'Al Muraqqabat':
+        branch = Branch.getBranchById('muraqabat');
+        break;
+      case 'IBN Battuta Mall':
+        branch = Branch.getBranchById('batutta_mall');
+        break;
+      case 'Marina':
+        branch = Branch.getBranchById('marina');
+        break;
+      case '"Al Bustan':
+        branch = Branch.getBranchById('al_bustan');
+        break;
+      case 'Tecom-Dubai':
+        branch = Branch.getBranchById('barsha_heights');
+        break;
+      default:
+        branch = Branch.allBranches.first; // Fallback to first branch
+    }
+    
+    if (branch != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BranchMapScreen(branch: branch!),
+        ),
+      );
+    }
   }
 
 }

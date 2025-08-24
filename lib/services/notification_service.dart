@@ -374,10 +374,14 @@ class NotificationService {
       );
 
       if (sameDayNotification.isAfter(DateTime.now())) {
+        String locationText = booking.address != null && booking.address!.isNotEmpty 
+            ? 'at your address: ${booking.address}'
+            : 'at ${booking.branch}';
+        
         await scheduleNotification(
           id: booking.id.hashCode,
           title: 'Booking Today! 📅',
-          body: 'You have a $serviceName booking today at ${booking.bookingTime} at ${booking.branch}',
+          body: 'You have a $serviceName booking today at ${booking.bookingTime} $locationText',
           scheduledDate: sameDayNotification,
           payload: jsonEncode({
             'type': 'bookingToday',
@@ -390,10 +394,14 @@ class NotificationService {
       DateTime oneHourBefore = bookingDateTime.subtract(const Duration(hours: 1));
       
       if (oneHourBefore.isAfter(DateTime.now())) {
+        String locationText = booking.address != null && booking.address!.isNotEmpty 
+            ? 'at your address'
+            : 'at ${booking.branch}';
+            
         await scheduleNotification(
           id: (booking.id! + '_1hour').hashCode,
           title: 'Booking Reminder ⏰',
-          body: 'Your $serviceName appointment is in 1 hour at ${booking.branch}',
+          body: 'Your $serviceName appointment is in 1 hour $locationText',
           scheduledDate: oneHourBefore,
           payload: jsonEncode({
             'type': 'bookingReminder',
@@ -412,11 +420,14 @@ class NotificationService {
   Future<void> sendBookingConfirmationNotification(Booking booking) async {
     try {
       String serviceName = booking.services.isNotEmpty ? booking.services.first.serviceName : 'appointment';
+      String locationText = booking.address != null && booking.address!.isNotEmpty 
+          ? ' (Home Service)'
+          : ' at ${booking.branch}';
       
       // Show immediate notification
       await showNotification(
         title: 'Booking Confirmed! ✅',
-        body: 'Your $serviceName appointment on ${booking.bookingDate.day}/${booking.bookingDate.month} at ${booking.bookingTime} has been confirmed.',
+        body: 'Your $serviceName appointment on ${booking.bookingDate.day}/${booking.bookingDate.month} at ${booking.bookingTime}$locationText has been confirmed.',
         payload: jsonEncode({
           'type': 'bookingConfirmation',
           'bookingId': booking.id,
@@ -428,7 +439,7 @@ class NotificationService {
       await FCMService().sendNotificationToUser(
         userId: booking.userId,
         title: 'Booking Confirmed! ✅',
-        body: 'Your $serviceName appointment on ${booking.bookingDate.day}/${booking.bookingDate.month} at ${booking.bookingTime} has been confirmed.',
+        body: 'Your $serviceName appointment on ${booking.bookingDate.day}/${booking.bookingDate.month} at ${booking.bookingTime}$locationText has been confirmed.',
         type: NotificationType.bookingConfirmation,
         bookingId: booking.id,
       );

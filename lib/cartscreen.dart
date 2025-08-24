@@ -84,8 +84,8 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   void _calculateTotals() {
-    totalPrice = cartItems.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
-    totalDuration = cartItems.fold(0, (sum, item) => sum + (item.duration * item.quantity));
+    totalPrice = cartItems.fold(0.0, (sum, item) => sum + item.price);
+    totalDuration = cartItems.fold(0, (sum, item) => sum + item.duration);
   }
 
   Widget _buildBookingOptionCard(
@@ -173,49 +173,92 @@ class _CartScreenState extends State<CartScreen> {
     final isMediumScreen = screenWidth >= 360 && screenWidth < 600;
     
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          'Cart',
-          style: TextStyle(
-            fontSize: isSmallScreen ? 18 : 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textColor,
-          ),
-        ),
-        backgroundColor: Colors.white,
+  
+  title: Text(
+    'My Cart',
+    style: TextStyle(
+      fontSize: isSmallScreen ? 18 : 20,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+    ),
+  ),
+        backgroundColor: AppColors.primaryColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textColor),
+      //   iconTheme: IconThemeData(color: Colors.white),
+      //   flexibleSpace: Container(
+      //     decoration: BoxDecoration(
+      //       gradient: LinearGradient(
+      //         begin: Alignment.topLeft,
+      //         end: Alignment.bottomRight,
+      //         colors: [
+      //           Colors.white,
+      //           AppColors.lightPink.withOpacity(0.1),
+      //         ],
+      //       ),
+      //     ),
+      //   ),
+      // ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : cartItems.isEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.shopping_cart_outlined,
-                        size: isSmallScreen ? 60 : 80,
-                        color: AppColors.greyColor,
-                      ),
-                      SizedBox(height: isSmallScreen ? 16 : 20),
-                      Text(
-                        'Your cart is empty',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 16 : 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textColor,
+                  child: Container(
+                    margin: EdgeInsets.all(isSmallScreen ? 20 : 32),
+                    padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_outlined,
+                          size: isSmallScreen ? 48 : 64,
+                          color: AppColors.primaryColor,
                         ),
-                      ),
-                      SizedBox(height: isSmallScreen ? 8 : 12),
-                      Text(
-                        'Add some services to get started',
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 14 : 16,
-                          color: AppColors.greyColor,
+                        SizedBox(height: isSmallScreen ? 20 : 24),
+                        Text(
+                          'Your cart is empty',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 18 : 22,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textColor,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        Text(
+                          'Discover our amazing beauty services\nand add them to your cart',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 14 : 16,
+                            color: AppColors.greyColor,
+                            height: 1.5,
+                          ),
+                        ),
+                        SizedBox(height: isSmallScreen ? 20 : 24),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isSmallScreen ? 24 : 32,
+                              vertical: isSmallScreen ? 12 : 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Browse Services',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : Column(
@@ -231,14 +274,11 @@ class _CartScreenState extends State<CartScreen> {
                             padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColors.greyColor.withOpacity(0.2),
+                                width: 1,
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -276,7 +316,7 @@ class _CartScreenState extends State<CartScreen> {
                                       ),
                                       SizedBox(height: isSmallScreen ? 4 : 6),
                                       Text(
-                                        '${item.duration} min • \$${item.price.toStringAsFixed(2)}',
+                                        '${item.duration} min • \A\E\D${item.price.toStringAsFixed(2)}',
                                         style: TextStyle(
                                           fontSize: isSmallScreen ? 12 : 14,
                                           color: AppColors.greyColor,
@@ -285,68 +325,23 @@ class _CartScreenState extends State<CartScreen> {
                                       SizedBox(height: isSmallScreen ? 8 : 12),
                                       Row(
                                         children: [
-                                          // Quantity Controls
+                                          // Service quantity is fixed at 1
                                           Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: isSmallScreen ? 8 : 12,
+                                              vertical: isSmallScreen ? 4 : 6,
+                                            ),
                                             decoration: BoxDecoration(
-                                              border: Border.all(
-                                                color: AppColors.greyColor.withOpacity(0.3),
-                                              ),
+                                              color: AppColors.primaryColor.withOpacity(0.1),
                                               borderRadius: BorderRadius.circular(8),
                                             ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                InkWell(
-                                                  onTap: () async {
-                                                    if (item.quantity > 1) {
-                                                      await FirebaseService.updateCartItemQuantity(
-                                                        item.id!,
-                                                        item.quantity - 1,
-                                                      );
-                                                      _loadCartItems();
-                                                    }
-                                                  },
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                                                    child: Icon(
-                                                      Icons.remove,
-                                                      size: isSmallScreen ? 16 : 18,
-                                                      color: AppColors.textColor,
-                                                    ),
-                                                  ),
-                                                ),
-                                                Container(
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: isSmallScreen ? 12 : 16,
-                                                    vertical: isSmallScreen ? 6 : 8,
-                                                  ),
-                                                  child: Text(
-                                                    '${item.quantity}',
-                                                    style: TextStyle(
-                                                      fontSize: isSmallScreen ? 14 : 16,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: AppColors.textColor,
-                                                    ),
-                                                  ),
-                                                ),
-                                                InkWell(
-                                                  onTap: () async {
-                                                    await FirebaseService.updateCartItemQuantity(
-                                                      item.id!,
-                                                      item.quantity + 1,
-                                                    );
-                                                    _loadCartItems();
-                                                  },
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-                                                    child: Icon(
-                                                      Icons.add,
-                                                      size: isSmallScreen ? 16 : 18,
-                                                      color: AppColors.textColor,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
+                                            child: Text(
+                                              'Qty: 1',
+                                              style: TextStyle(
+                                                fontSize: isSmallScreen ? 12 : 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: AppColors.primaryColor,
+                                              ),
                                             ),
                                           ),
                                           const Spacer(),
@@ -386,13 +381,12 @@ class _CartScreenState extends State<CartScreen> {
                         padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, -2),
+                          border: Border(
+                            top: BorderSide(
+                              color: AppColors.greyColor.withOpacity(0.2),
+                              width: 1,
                             ),
-                          ],
+                          ),
                         ),
                         child: Column(
                           children: [
@@ -429,7 +423,7 @@ class _CartScreenState extends State<CartScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '\$${totalPrice.toStringAsFixed(2)}',
+                                  'AED ${totalPrice.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: isSmallScreen ? 18 : 20,
                                     fontWeight: FontWeight.bold,
@@ -453,7 +447,6 @@ class _CartScreenState extends State<CartScreen> {
                                           'category': item.category,
                                           'duration': item.duration,
                                           'price': item.price,
-                                          'quantity': item.quantity,
                                           'imageBase64': item.imageBase64 ?? '',
                                           'name': item.serviceName,
                                           'date': DateTime.now(),
@@ -472,7 +465,7 @@ class _CartScreenState extends State<CartScreen> {
                                     vertical: isSmallScreen ? 14 : 16,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                                 child: Text(

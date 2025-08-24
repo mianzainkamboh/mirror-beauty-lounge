@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:mirrorsbeautylounge/albustan_map_screen.dart';
 import 'package:mirrorsbeautylounge/app_colors.dart';
+import 'package:mirrorsbeautylounge/branches.dart';
+import 'package:mirrorsbeautylounge/models/branch.dart';
 import 'package:mirrorsbeautylounge/services/firebase_service.dart';
 import 'package:mirrorsbeautylounge/models/category.dart';
+import 'package:mirrorsbeautylounge/models/offer.dart';
 import 'package:mirrorsbeautylounge/services_by_category_screen.dart';
 class MenServicesScreen extends StatefulWidget {
   final String? categoryName;
-  const MenServicesScreen({super.key, this.categoryName});
+  final Offer? preAppliedOffer;
+  const MenServicesScreen({super.key, this.categoryName, this.preAppliedOffer});
 
   @override
   State<MenServicesScreen> createState() => _MenServicesScreenState();
@@ -41,11 +44,25 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
       
       final fetchedCategories = await FirebaseService.getCategories();
       
+      // Debug: Print all fetched categories
+      print('MenServicesScreen: Total categories fetched: ${fetchedCategories.length}');
+      for (int i = 0; i < fetchedCategories.length; i++) {
+        final cat = fetchedCategories[i];
+        print('MenServicesScreen: Category $i - ID: ${cat.id}, Name: "${cat.name}", Gender: ${cat.gender}');
+      }
+      
       setState(() {
         // Filter categories for men
         categories = fetchedCategories.where((category) => 
           category.gender == 'men' || category.gender == 'unisex'
         ).toList();
+        
+        // Debug: Print filtered categories
+        print('MenServicesScreen: Filtered categories for men: ${categories.length}');
+        for (int i = 0; i < categories.length; i++) {
+          final cat = categories[i];
+          print('MenServicesScreen: Filtered Category $i - ID: ${cat.id}, Name: "${cat.name}", Gender: ${cat.gender}');
+        }
         isLoading = false;
       });
     } catch (e) {
@@ -86,6 +103,70 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
             floating: true,
             snap: true,
           ),
+
+          // Pre-applied Offer Display
+          if (widget.preAppliedOffer != null)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: EdgeInsets.symmetric(
+                  horizontal: screenWidth < 360 ? 16 : 24,
+                  vertical: screenWidth < 360 ? 8 : 12
+                ),
+                padding: EdgeInsets.all(screenWidth < 360 ? 12 : 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primaryColor.withOpacity(0.1), AppColors.primaryColor.withOpacity(0.05)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.local_offer,
+                      color: AppColors.primaryColor,
+                      size: screenWidth < 360 ? 20 : 24,
+                    ),
+                    SizedBox(width: screenWidth < 360 ? 8 : 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Offer Applied: ${widget.preAppliedOffer!.title}',
+                            style: TextStyle(
+                              fontSize: screenWidth < 360 ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                          if (widget.preAppliedOffer!.description.isNotEmpty)
+                            Text(
+                              widget.preAppliedOffer!.description,
+                              style: TextStyle(
+                                fontSize: screenWidth < 360 ? 12 : 14,
+                                color: AppColors.textColor.withOpacity(0.8),
+                              ),
+                            ),
+                          Text(
+                            widget.preAppliedOffer!.discountType == 'percentage'
+                                ? '${widget.preAppliedOffer!.discountValue.toInt()}% OFF'
+                                : 'PKR ${widget.preAppliedOffer!.discountValue.toInt()} OFF',
+                            style: TextStyle(
+                              fontSize: screenWidth < 360 ? 13 : 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Branch Section
           SliverToBoxAdapter(
@@ -221,7 +302,16 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
-         Navigator.push(context, MaterialPageRoute(builder: (context)=>BranchMapScreen()));
+          // Get Marina branch as default
+          final marinaBranch = Branch.getBranchByName('Marina');
+          if (marinaBranch != null) {
+            Navigator.push(
+              context, 
+              MaterialPageRoute(
+                builder: (context) => BranchMapScreen(branch: marinaBranch)
+              )
+            );
+          }
         },
         child: Padding(
           padding: EdgeInsets.all(screenWidth < 360 ? 12 : 16),
@@ -318,6 +408,12 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {
+          // Debug: Print category info before navigation
+          print('MenServicesScreen: Navigating to ServicesByCategoryScreen');
+          print('MenServicesScreen: Category ID: ${category.id}');
+          print('MenServicesScreen: Category Name: "${category.name}"');
+          print('MenServicesScreen: Category Gender: ${category.gender}');
+          
           Navigator.push(
             context,
             MaterialPageRoute(

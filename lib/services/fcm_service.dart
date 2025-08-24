@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import '../models/notification_model.dart';
 import 'notification_service.dart';
+import 'auth_service.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -13,6 +14,7 @@ class FCMService {
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AuthService _authService = AuthService();
 
   String? _fcmToken;
   bool _isInitialized = false;
@@ -231,7 +233,12 @@ class FCMService {
     try {
       if (notification is RemoteMessage) {
         // Handle RemoteMessage from FCM
-        String userId = 'user123'; // Replace with actual user ID
+        final user = _authService.currentUser;
+        if (user == null) {
+          debugPrint('No authenticated user for saving notification');
+          return;
+        }
+        String userId = user.uid;
         
         NotificationType type = NotificationType.offer;
         if (notification.data['type'] != null) {

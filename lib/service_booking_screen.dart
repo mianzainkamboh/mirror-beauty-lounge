@@ -166,7 +166,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
           Text('Customer: $customerName', style: TextStyle(color: AppColors.textColor, fontSize: 16)),
           Spacer(),
           TextButton(onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>BookingHistoryScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>const BookingHistoryScreen(shouldRefresh: true)));
           }, child: Text("View History",style: TextStyle(color: AppColors.primaryColor,fontSize: 16),))
         ],
       ),

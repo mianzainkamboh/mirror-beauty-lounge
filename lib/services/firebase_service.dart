@@ -7,6 +7,43 @@ import '../models/booking.dart';
 
 class FirebaseService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  // Retry mechanism for Firebase operations
+  static Future<T> _retryOperation<T>(Future<T> Function() operation, {int maxRetries = 3}) async {
+    int attempts = 0;
+    while (attempts < maxRetries) {
+      try {
+        return await operation();
+      } catch (e) {
+        attempts++;
+        print('DEBUG: Firebase operation failed (attempt $attempts/$maxRetries): $e');
+        
+        if (attempts >= maxRetries) {
+          print('DEBUG: Max retries reached, throwing error');
+          rethrow;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        int delayMs = 1000 * attempts; // 1s, 2s, 3s
+        print('DEBUG: Retrying in ${delayMs}ms...');
+        await Future.delayed(Duration(milliseconds: delayMs));
+      }
+    }
+    throw Exception('Retry operation failed unexpectedly');
+  }
+  
+  // Test Firebase connection
+  static Future<void> testConnection(String userId) async {
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .get()
+          .timeout(const Duration(seconds: 10));
+    } catch (e) {
+      throw Exception('Firebase connection test failed: $e');
+    }
+  }
 
   // ==================== CATEGORIES FUNCTIONS ====================
 
@@ -65,6 +102,24 @@ class FirebaseService {
         .map((snapshot) => snapshot.docs
             .map((doc) => Category.fromFirestore(doc))
             .toList());
+  }
+
+  // Get category by name
+  static Future<Category?> getCategoryByName(String categoryName) async {
+    try {
+      QuerySnapshot querySnapshot = await _categoriesCollection
+          .where('name', isEqualTo: categoryName)
+          .limit(1)
+          .get();
+      
+      if (querySnapshot.docs.isNotEmpty) {
+        return Category.fromFirestore(querySnapshot.docs.first);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting category by name: $e');
+      return null;
+    }
   }
 
   // ==================== SERVICES FUNCTIONS ====================
@@ -148,6 +203,46 @@ class FirebaseService {
       return services;
     } catch (e) {
       throw Exception('Error getting services by category: $e');
+    }
+  }
+
+  // Get services by IDs
+  static Future<List<Service>> getServicesByIds(List<String> serviceIds) async {
+    try {
+      if (serviceIds.isEmpty) {
+        return [];
+      }
+      
+      // Firestore 'in' queries are limited to 10 items, so we need to batch them
+      List<Service> allServices = [];
+      
+      // Process in chunks of 10
+      for (int i = 0; i < serviceIds.length; i += 10) {
+        int end = (i + 10 < serviceIds.length) ? i + 10 : serviceIds.length;
+        List<String> chunk = serviceIds.sublist(i, end);
+        
+        QuerySnapshot querySnapshot = await _servicesCollection
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+        
+        List<Service> chunkServices = querySnapshot.docs
+            .map((doc) => Service.fromFirestore(doc))
+            .toList();
+        
+        allServices.addAll(chunkServices);
+      }
+      
+      // Sort by createdAt in memory
+      allServices.sort((a, b) {
+        if (a.createdAt == null && b.createdAt == null) return 0;
+        if (a.createdAt == null) return 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+      
+      return allServices;
+    } catch (e) {
+      throw Exception('Error getting services by IDs: $e');
     }
   }
 
@@ -385,12 +480,21 @@ class FirebaseService {
 
   // Create new booking
   static Future<String> createBooking(Booking booking) async {
-    try {
-      DocumentReference docRef = await _bookingsCollection.add(booking.toFirestore());
+    return await _retryOperation(() async {
+      print('DEBUG: FirebaseService.createBooking called');
+      print('DEBUG: Booking userId: ${booking.userId}');
+      print('DEBUG: Booking services count: ${booking.services.length}');
+      print('DEBUG: Booking status: ${booking.status}');
+      print('DEBUG: Booking date: ${booking.bookingDate}');
+      
+      Map<String, dynamic> bookingData = booking.toFirestore();
+      print('DEBUG: Booking data to save: $bookingData');
+      
+      DocumentReference docRef = await _bookingsCollection.add(bookingData);
+      print('DEBUG: Booking saved successfully with ID: ${docRef.id}');
+      
       return docRef.id;
-    } catch (e) {
-      throw Exception('Error creating booking: $e');
-    }
+    });
   }
 
   // Update booking
@@ -441,14 +545,40 @@ class FirebaseService {
 
   // Get bookings by status for a user
   static Future<List<Booking>> getUserBookingsByStatus(String userId, String status) async {
-    try {
+    return await _retryOperation(() async {
+      print('DEBUG: ========================');
+      print('DEBUG: getUserBookingsByStatus called');
+      print('DEBUG: - userId: $userId');
+      print('DEBUG: - status: $status');
+      print('DEBUG: - Collection path: bookings');
+      
       QuerySnapshot querySnapshot = await _bookingsCollection
           .where('userId', isEqualTo: userId)
           .where('status', isEqualTo: status)
           .get();
       
+      print('DEBUG: Firestore query completed');
+      print('DEBUG: Found ${querySnapshot.docs.length} documents for userId: $userId, status: $status');
+      
+      if (querySnapshot.docs.isNotEmpty) {
+        print('DEBUG: First document ID: ${querySnapshot.docs.first.id}');
+        print('DEBUG: First document data keys: ${querySnapshot.docs.first.data().toString()}');
+      }
+      
       List<Booking> bookings = querySnapshot.docs
-          .map((doc) => Booking.fromFirestore(doc))
+          .map((doc) {
+            try {
+              print('DEBUG: Parsing document ${doc.id}');
+              Booking booking = Booking.fromFirestore(doc);
+              print('DEBUG: Successfully parsed booking ${doc.id} - Customer: ${booking.customerName}');
+              return booking;
+            } catch (e) {
+              print('DEBUG: ❌ Error parsing booking document ${doc.id}: $e');
+              return null;
+            }
+          })
+          .where((booking) => booking != null)
+          .cast<Booking>()
           .toList();
       
       // Sort by createdAt in the app instead of in the query
@@ -459,10 +589,17 @@ class FirebaseService {
         return b.createdAt!.compareTo(a.createdAt!);
       });
       
+      print('DEBUG: ✅ Returning ${bookings.length} valid bookings for userId: $userId, status: $status');
+      if (bookings.isNotEmpty) {
+        print('DEBUG: Sample booking details:');
+        final sample = bookings.first;
+        print('DEBUG: - ID: ${sample.id}');
+        print('DEBUG: - Customer: ${sample.customerName}');
+        print('DEBUG: - Date: ${sample.bookingDate}');
+        print('DEBUG: - Services: ${sample.services.map((s) => s.serviceName).join(', ')}');
+      }
       return bookings;
-    } catch (e) {
-      throw Exception('Error getting user bookings by status: $e');
-    }
+    });
   }
 
   // Listen to user bookings changes (real-time)

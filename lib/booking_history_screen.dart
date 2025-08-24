@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mirrorsbeautylounge/app_colors.dart';
 import 'package:mirrorsbeautylounge/models/booking.dart';
 import 'package:mirrorsbeautylounge/services/firebase_service.dart';
@@ -6,26 +8,64 @@ import 'package:mirrorsbeautylounge/services/auth_service.dart';
 
 
 class BookingHistoryScreen extends StatefulWidget {
-  const BookingHistoryScreen({super.key});
+  final bool shouldRefresh;
+  
+  const BookingHistoryScreen({super.key, this.shouldRefresh = false});
 
   @override
   State<BookingHistoryScreen> createState() => _BookingHistoryScreenState();
 }
 
-class _BookingHistoryScreenState extends State<BookingHistoryScreen>
-    with SingleTickerProviderStateMixin {
+class _BookingHistoryScreenState extends State<BookingHistoryScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  final AuthService _authService = AuthService();
   List<Booking> upcomingBookings = [];
   List<Booking> pastBookings = [];
   bool isLoading = true;
   String? errorMessage;
+  bool _hasLoadedOnce = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadBookings();
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Load bookings immediately if shouldRefresh is true, otherwise use normal flow
+    if (widget.shouldRefresh) {
+      print('DEBUG: Force refresh requested, loading bookings immediately');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadBookings();
+      });
+    } else {
+      _loadBookings();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && _hasLoadedOnce) {
+      // Refresh data when app comes back to foreground
+      print('DEBUG: App resumed, refreshing booking data');
+      _loadBookings();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data when screen becomes active (e.g., navigated to from another screen)
+    if (_hasLoadedOnce || widget.shouldRefresh) {
+      print('DEBUG: Screen dependencies changed, refreshing booking data');
+      // Add a small delay to ensure any pending Firebase operations are complete
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          _loadBookings();
+        }
+      });
+    }
   }
 
   Future<void> _loadBookings() async {
@@ -35,30 +75,125 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
         errorMessage = null;
       });
 
+      // Get current user ID
+      final user = _authService.currentUser;
+      print('DEBUG: ========================');
+      print('DEBUG: BookingHistoryScreen._loadBookings() called');
+      print('DEBUG: Current timestamp: ${DateTime.now()}');
+      print('DEBUG: Loading bookings for user: ${user?.uid}');
+      print('DEBUG: shouldRefresh parameter: ${widget.shouldRefresh}');
+      
+      if (user == null) {
+        print('DEBUG: ❌ No user found, user not logged in');
+        setState(() {
+          errorMessage = 'Please log in to view your booking history.';
+          isLoading = false;
+        });
+        return;
+      }
+
+      // Check Firebase connection first
+      print('DEBUG: Checking Firebase connection');
+      if (!await _checkFirebaseConnection()) {
+        throw Exception('Unable to connect to the server. Please check your internet connection.');
+      }
+
       // Update overdue bookings first
+      print('DEBUG: Updating overdue bookings...');
       await FirebaseService.updateOverdueBookings();
+      print('DEBUG: ✅ Updated overdue bookings');
 
       // Load bookings from Firebase
-      const String userId = 'user123'; // Replace with actual user ID from auth
+      final String userId = user.uid;
+      print('DEBUG: Fetching bookings for userId: $userId');
+      print('DEBUG: About to call FirebaseService.getUpcomingBookings...');
       
       final upcoming = await FirebaseService.getUpcomingBookings(userId);
+      print('DEBUG: ✅ getUpcomingBookings completed');
+      
+      print('DEBUG: About to call FirebaseService.getPastBookings...');
       final past = await FirebaseService.getPastBookings(userId);
+      print('DEBUG: ✅ getPastBookings completed');
+      
+      print('DEBUG: Retrieved ${upcoming.length} upcoming bookings');
+      print('DEBUG: Retrieved ${past.length} past bookings');
+      
+      // Log detailed information about each booking
+      if (upcoming.isNotEmpty) {
+        print('DEBUG: === UPCOMING BOOKINGS DETAILS ===');
+        for (int i = 0; i < upcoming.length; i++) {
+          final booking = upcoming[i];
+          print('DEBUG: Upcoming[$i]: ID=${booking.id}, Customer=${booking.customerName}, Date=${booking.bookingDate}, Status=${booking.status}, CreatedAt=${booking.createdAt}');
+        }
+      } else {
+        print('DEBUG: ⚠️ No upcoming bookings found');
+      }
+      
+      if (past.isNotEmpty) {
+        print('DEBUG: === PAST BOOKINGS DETAILS ===');
+        for (int i = 0; i < past.length; i++) {
+          final booking = past[i];
+          print('DEBUG: Past[$i]: ID=${booking.id}, Customer=${booking.customerName}, Date=${booking.bookingDate}, Status=${booking.status}, CreatedAt=${booking.createdAt}');
+        }
+      } else {
+        print('DEBUG: ⚠️ No past bookings found');
+      }
 
       setState(() {
         upcomingBookings = upcoming;
         pastBookings = past;
         isLoading = false;
+        _hasLoadedOnce = true;
       });
+      
+      print('DEBUG: ✅ Booking history screen state updated successfully');
+      print('DEBUG: Final state - Upcoming: ${upcomingBookings.length}, Past: ${pastBookings.length}');
+      print('DEBUG: ========================');
     } catch (e) {
+      print('DEBUG: Error loading bookings: $e');
+      
+      String errorMessage = 'Failed to load bookings';
+      if (e.toString().contains('network') || e.toString().contains('connection')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (e.toString().contains('permission') || e.toString().contains('auth')) {
+        errorMessage = 'Authentication error. Please log out and log back in.';
+      } else if (e.toString().contains('Firebase') || e.toString().contains('firestore')) {
+        errorMessage = 'Server error. Please try again in a few moments.';
+      } else {
+        errorMessage = 'Error: ${e.toString()}';
+      }
+      
       setState(() {
-        errorMessage = 'Failed to load bookings: $e';
+        this.errorMessage = errorMessage;
         isLoading = false;
       });
+    }
+  }
+  
+  Future<bool> _checkFirebaseConnection() async {
+    try {
+      print('DEBUG: Testing Firebase connection');
+      final user = _authService.currentUser;
+      if (user == null) {
+        print('DEBUG: No authenticated user for connection test');
+        return false;
+      }
+      
+      // Test Firestore connection with a timeout
+      await FirebaseService.testConnection(user.uid)
+          .timeout(const Duration(seconds: 10));
+      
+      print('DEBUG: Firebase connection test successful');
+      return true;
+    } catch (e) {
+      print('DEBUG: Firebase connection test failed: $e');
+      return false;
     }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -79,12 +214,14 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(context),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage != null
-              ? _buildErrorWidget(context)
-              : Column(
-                  children: [
+      body: RefreshIndicator(
+        onRefresh: _loadBookings,
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : errorMessage != null
+                ? _buildErrorWidget(context)
+                : Column(
+                    children: [
                     // Search Bar
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
@@ -205,8 +342,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
                         ],
                       ),
                     ),
-                  ],
-                ),
+                    ],
+                  ),
+      ),
     );
   }
 
@@ -376,14 +514,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
     String selectedBranch = booking.branch;
     bool isLoading = false;
 
-    // Get user gender for branch restrictions
-    String? userGender;
-    try {
-      final AuthService authService = AuthService();
-      userGender = await authService.getCurrentUserGender();
-    } catch (e) {
-      // Handle error silently
-    }
+    // Check if booking contains men's services for branch restrictions
+    bool hasMensServices = await _containsMensServices(booking.services);
 
     // All branches list
     final List<String> allBranches = [
@@ -394,13 +526,13 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
       'Marina',
     ];
  
-    // Get available branches based on user gender
-    List<String> availableBranches = userGender?.toLowerCase() == 'male' 
+    // Get available branches based on services
+    List<String> availableBranches = hasMensServices 
         ? ['Marina'] 
         : allBranches;
 
-    // Ensure selected branch is available for the user
-    if (userGender?.toLowerCase() == 'male' && selectedBranch != 'Marina') {
+    // Ensure selected branch is available for the services
+    if (hasMensServices && selectedBranch != 'Marina') {
       selectedBranch = 'Marina';
     }
 
@@ -472,10 +604,10 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
                             fontSize: 16,
                           ),
                         ),
-                        if (userGender?.toLowerCase() == 'male')
+                        if (hasMensServices)
                           const Expanded(
                             child: Text(
-                              ' (Available in Marina only)',
+                              ' (Men services available in Marina only)',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: AppColors.primaryColor,
@@ -497,22 +629,27 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
                         child: DropdownButton<String>(
                           value: selectedBranch,
                           isExpanded: true,
-                          items: availableBranches.map((branch) {
+                          items: allBranches.map((branch) {
+                            final bool isAvailable = !hasMensServices || branch == 'Marina';
                             return DropdownMenuItem(
                               value: branch,
+                              enabled: isAvailable,
                               child: Text(
                                 branch,
-                                style: const TextStyle(
-                                  color: Colors.black,
+                                style: TextStyle(
+                                  color: isAvailable ? Colors.black : Colors.grey,
                                 ),
                               ),
                             );
                           }).toList(),
                           onChanged: (value) {
                             if (value != null) {
-                              setState(() {
-                                selectedBranch = value;
-                              });
+                              final bool isAvailable = !hasMensServices || value == 'Marina';
+                              if (isAvailable) {
+                                setState(() {
+                                  selectedBranch = value;
+                                });
+                              }
                             }
                           },
                         ),
@@ -680,6 +817,37 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen>
     );
   }
 
+  // Check if booking services contain men's services
+  Future<bool> _containsMensServices(List<BookingService> services) async {
+    try {
+      print('=== DEBUG: _containsMensServices called for reschedule ===');
+      print('Services count: ${services.length}');
+      
+      for (int i = 0; i < services.length; i++) {
+        var service = services[i];
+        String categoryName = service.category;
+        print('Service $i: category name = "$categoryName"');
+        
+        final category = await FirebaseService.getCategoryByName(categoryName);
+        print('Service $i: Firebase category result = $category');
+        
+        if (category != null) {
+          print('Service $i: category.gender = "${category.gender}"');
+          if (category.gender == 'men') {
+            print('=== FOUND MEN\'S SERVICE! Restricting to Marina branch ===');
+            return true;
+          }
+        }
+      }
+      
+      print('=== No men\'s services found, all branches available ===');
+      return false;
+    } catch (e) {
+      print('Error checking men\'s services: $e');
+      return false;
+    }
+  }
+
   void _showCancelDialog(Booking booking) {
     showDialog(
       context: context,
@@ -822,8 +990,19 @@ class BookingCard extends StatelessWidget {
               '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year} • ${booking.bookingTime}',
             ),
 
-            // Branch
-            _buildInfoRow(context, Icons.location_on, booking.branch),
+            // Branch or Home Service
+            if (booking.address != null && booking.address!.isNotEmpty)
+              _buildInfoRow(context, Icons.home, 'Home Service')
+            else
+              _buildInfoRow(context, Icons.location_on, booking.branch),
+
+            // Address (only for home services)
+            if (booking.address != null && booking.address!.isNotEmpty)
+              _buildInfoRow(context, Icons.location_on, booking.address!),
+
+            // Payment Method (only for upcoming bookings)
+            if (isUpcoming)
+              _buildInfoRow(context, Icons.credit_card, 'Payment: ${booking.paymentMethod}'),
 
             // Price
             _buildInfoRow(context, Icons.attach_money, 'AED ${booking.totalPrice.toStringAsFixed(0)}'),

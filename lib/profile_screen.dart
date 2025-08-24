@@ -4,9 +4,11 @@ import 'package:mirrorsbeautylounge/booking_history_screen.dart' show BookingHis
 import 'package:mirrorsbeautylounge/chat_screen.dart';
 import 'package:mirrorsbeautylounge/service_booking_screen.dart';
 import 'package:mirrorsbeautylounge/services/auth_service.dart';
+import 'package:mirrorsbeautylounge/services/profile_picture_service.dart';
 import 'package:mirrorsbeautylounge/auth_wrapper.dart';
 import 'package:mirrorsbeautylounge/edit_profile_screen.dart';
 import 'package:mirrorsbeautylounge/login_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'home.dart';
 
 void main() {
@@ -51,11 +53,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
+  String? _profilePictureUrl;
+  bool _isUploadingPicture = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadProfilePicture();
   }
 
   Future<void> _loadUserData() async {
@@ -75,6 +80,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  Future<void> _loadProfilePicture() async {
+    try {
+      final profilePictureUrl = await ProfilePictureService.getProfilePictureUrl();
+      if (mounted) {
+        setState(() {
+          _profilePictureUrl = profilePictureUrl;
+        });
+      }
+    } catch (e) {
+      // Silently handle error - profile picture is optional
+      print('Error loading profile picture: $e');
+    }
+  }
+
+  Future<void> _handleProfilePictureUpload() async {
+    try {
+      setState(() {
+        _isUploadingPicture = true;
+      });
+
+      final downloadUrl = await ProfilePictureService.pickAndUploadProfilePicture(context);
+      
+      if (downloadUrl != null && mounted) {
+        setState(() {
+          _profilePictureUrl = downloadUrl;
+          _isUploadingPicture = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated successfully!')),
+        );
+      } else {
+        setState(() {
+          _isUploadingPicture = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploadingPicture = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading profile picture: ${e.toString()}')),
+        );
       }
     }
   }
@@ -257,13 +311,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   SizedBox(width: isSmallScreen ? 8 : 16),
-                  CircleAvatar(
-                    radius: avatarRadius,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: avatarIconSize,
-                      color: AppColors.primaryColor,
+                  GestureDetector(
+                    onTap: _isUploadingPicture ? null : _handleProfilePictureUpload,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: avatarRadius,
+                          backgroundColor: Colors.white,
+                          child: _isUploadingPicture
+                              ? SizedBox(
+                                  width: avatarIconSize * 0.6,
+                                  height: avatarIconSize * 0.6,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.primaryColor,
+                                    ),
+                                  ),
+                                )
+                              : _profilePictureUrl != null
+                                  ? ClipOval(
+                                      child: CachedNetworkImage(
+                                        imageUrl: _profilePictureUrl!,
+                                        width: avatarRadius * 2,
+                                        height: avatarRadius * 2,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Icon(
+                                          Icons.person,
+                                          size: avatarIconSize,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                        errorWidget: (context, url, error) => Icon(
+                                          Icons.person,
+                                          size: avatarIconSize,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: avatarIconSize,
+                                      color: AppColors.primaryColor,
+                                    ),
+                        ),
+                        if (!_isUploadingPicture)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                size: isSmallScreen ? 12 : 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ]),
@@ -326,12 +435,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           // Bottom section
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.all(horizontalPadding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          Container(
+            padding: EdgeInsets.all(horizontalPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -402,7 +510,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-          ),
         ],
       ),
       ),

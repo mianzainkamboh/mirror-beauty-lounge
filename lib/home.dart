@@ -151,6 +151,19 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
   Future<void> _loadOffers() async {
     try {
       setState(() {
@@ -159,9 +172,25 @@ class _HomePageState extends State<HomePage> {
       });
       
       final firebaseOffers = await FirebaseService.getOffers();
+      final now = DateTime.now();
       
       setState(() {
-        offers = firebaseOffers.where((offer) => offer.isActive).toList();
+        offers = firebaseOffers.where((offer) {
+          if (!offer.isActive) return false;
+          
+          // Check if offer is within valid date range
+          try {
+            final validFrom = DateTime.parse(offer.validFrom);
+            final validTo = DateTime.parse(offer.validTo);
+            
+            // Offer is valid if current date is between validFrom and validTo (inclusive)
+            return now.isAfter(validFrom.subtract(const Duration(days: 1))) && 
+                   now.isBefore(validTo.add(const Duration(days: 1)));
+          } catch (e) {
+            // If date parsing fails, don't show the offer
+            return false;
+          }
+        }).toList();
         isLoadingOffers = false;
       });
     } catch (e) {
@@ -169,6 +198,77 @@ class _HomePageState extends State<HomePage> {
         offersError = 'Failed to load offers: $e';
         isLoadingOffers = false;
       });
+    }
+  }
+
+  void _navigateToOfferServices(Offer offer) async {
+    // If offer has specific target services, navigate to the appropriate service category
+    if (offer.targetServices.isNotEmpty) {
+      try {
+        // Load categories to determine the gender of target services
+        final allCategories = await FirebaseService.getCategories();
+        
+        // Find categories that match the target services
+        final targetCategories = allCategories.where((category) => 
+          offer.targetServices.contains(category.id)
+        ).toList();
+        
+        if (targetCategories.isNotEmpty) {
+          // Determine the primary gender for navigation
+          final hasWomen = targetCategories.any((cat) => 
+            cat.gender == 'women' || cat.gender == 'unisex');
+          final hasMen = targetCategories.any((cat) => 
+            cat.gender == 'men' || cat.gender == 'unisex');
+          
+          if (hasWomen && !hasMen) {
+            // Navigate to women services
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => WomenServicesScreen(
+                  categoryName: 'Female',
+                  preAppliedOffer: offer,
+                ),
+              ),
+            );
+          } else if (hasMen && !hasWomen) {
+            // Navigate to men services
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MenServicesScreen(
+                  categoryName: 'Male',
+                  preAppliedOffer: offer,
+                ),
+              ),
+            );
+          } else {
+            // Mixed categories or unisex - show offers screen for selection
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const OffersScreen()),
+            );
+          }
+        } else {
+          // Target services not found in categories, show offers screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OffersScreen()),
+          );
+        }
+      } catch (e) {
+        // Error loading categories, fallback to offers screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const OffersScreen()),
+        );
+      }
+    } else {
+      // If no specific services, show all offers
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const OffersScreen()),
+      );
     }
   }
 
@@ -313,23 +413,18 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const OffersScreen()),
-        );
-      },
-      child: SizedBox(
-        height: containerHeight + 15,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 0),
-          itemCount: offers.length,
-          separatorBuilder: (_, __) => SizedBox(width: isSmallScreen ? 8 : 12),
-          itemBuilder: (context, index) {
-            final offer = offers[index];
-            return Container(
+    return SizedBox(
+      height: containerHeight + 15,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 8 : 0),
+        itemCount: offers.length,
+        separatorBuilder: (_, __) => SizedBox(width: isSmallScreen ? 8 : 12),
+        itemBuilder: (context, index) {
+          final offer = offers[index];
+          return GestureDetector(
+            onTap: () => _navigateToOfferServices(offer),
+            child: Container(
               width: cardWidth,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -372,19 +467,45 @@ class _HomePageState extends State<HomePage> {
                                     fontWeight: FontWeight.bold,
                                     fontSize: isSmallScreen ? 13 : 15,
                                   ),
-                                  maxLines: 2,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  offer.description,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: isSmallScreen ? 9 : 10,
+                                  ),
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-                                Expanded(
-                                  child: Text(
-                                    offer.description,
+                                // Services and branches info
+                                if (offer.targetServices.isNotEmpty)
+                                  Text(
+                                    'Valid for ${offer.targetServices.length} service${offer.targetServices.length > 1 ? 's' : ''}',
                                     style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: isSmallScreen ? 10 : 12,
+                                      color: const Color(0xFFFF8F8F),
+                                      fontSize: isSmallScreen ? 8 : 9,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                if (offer.targetBranches.isNotEmpty)
+                                  Text(
+                                    'Available at ${offer.targetBranches.length} branch${offer.targetBranches.length > 1 ? 'es' : ''}',
+                                    style: TextStyle(
+                                      color: const Color(0xFFFF8F8F),
+                                      fontSize: isSmallScreen ? 8 : 9,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                // Validity period
+                                Text(
+                                  'Valid until ${_formatDate(offer.validTo)}',
+                                  style: TextStyle(
+                                    color: Colors.grey[500],
+                                    fontSize: isSmallScreen ? 8 : 9,
                                   ),
                                 ),
                               ],
@@ -434,9 +555,9 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }

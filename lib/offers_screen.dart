@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:mirrorsbeautylounge/models/offer.dart';
-import 'package:mirrorsbeautylounge/services/firebase_service.dart';
-import 'package:mirrorsbeautylounge/branch_selection_screen.dart';
+import 'models/offer.dart';
+import 'services/firebase_service.dart';
+import 'offer_services_screen.dart';
+import 'dart:convert';
 
 class OffersScreen extends StatefulWidget {
   const OffersScreen({Key? key}) : super(key: key);
 
   @override
-  State<OffersScreen> createState() => _OffersScreenState();
+  _OffersScreenState createState() => _OffersScreenState();
 }
 
 class _OffersScreenState extends State<OffersScreen> {
@@ -27,14 +28,32 @@ class _OffersScreenState extends State<OffersScreen> {
         isLoading = true;
         error = null;
       });
+
       final firebaseOffers = await FirebaseService.getOffers();
+      final now = DateTime.now();
+      
       setState(() {
-        offers = firebaseOffers.where((offer) => offer.isActive).toList();
+        offers = firebaseOffers.where((offer) {
+          if (!offer.isActive) return false;
+          
+          // Check if offer is within valid date range
+          try {
+            final validFrom = DateTime.parse(offer.validFrom);
+            final validTo = DateTime.parse(offer.validTo);
+            
+            // Offer is valid if current date is between validFrom and validTo (inclusive)
+            return now.isAfter(validFrom.subtract(const Duration(days: 1))) && 
+                   now.isBefore(validTo.add(const Duration(days: 1)));
+          } catch (e) {
+            // If date parsing fails, don't show the offer
+            return false;
+          }
+        }).toList();
         isLoading = false;
       });
     } catch (e) {
       setState(() {
-        error = 'Failed to load offers: $e';
+        error = e.toString();
         isLoading = false;
       });
     }
@@ -42,34 +61,124 @@ class _OffersScreenState extends State<OffersScreen> {
 
   Widget _buildOfferImage(String? imageBase64) {
     if (imageBase64 != null && imageBase64.isNotEmpty) {
-      try {
-        return Image.memory(
-          Uri.parse(imageBase64).data!.contentAsBytes(),
-          height: 200,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        );
-      } catch (e) {
-        return Container(
-          height: 200,
-          color: Colors.grey[300],
-          child: const Icon(
-            Icons.image,
-            size: 50,
-            color: Colors.grey,
-          ),
-        );
+      // Handle data URL format (data:image/...)
+      if (imageBase64.startsWith('data:image/')) {
+        try {
+          // Extract base64 string from data URL
+          final parts = imageBase64.split(',');
+          if (parts.length < 2) {
+            print('Invalid data URL format: missing comma separator');
+            return _buildFallbackImage();
+          }
+          final base64String = parts[1];
+          final bytes = base64Decode(base64String);
+          return Container(
+            height: 200,
+            width: double.infinity,
+            child: Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: 200,
+              errorBuilder: (context, error, stackTrace) {
+                print('Error displaying data URL image: $error');
+                return _buildFallbackImage();
+              },
+            ),
+          );
+        } catch (e) {
+          print('Error decoding data URL image: $e');
+          return _buildFallbackImage();
+        }
+      } else {
+        // Handle raw base64 string
+        try {
+          final bytes = base64Decode(imageBase64);
+          if (bytes.isNotEmpty) {
+            return Container(
+              height: 200,
+              width: double.infinity,
+              child: Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 200,
+                errorBuilder: (context, error, stackTrace) {
+                  print('Error displaying raw base64 image: $error');
+                  return _buildFallbackImage();
+                },
+              ),
+            );
+          }
+        } catch (e) {
+          print('Error decoding raw base64 image: $e');
+          print('Base64 length: ${imageBase64.length}');
+          print('Base64 preview: ${imageBase64.substring(0, imageBase64.length > 50 ? 50 : imageBase64.length)}...');
+        }
       }
     }
+
+    // Return fallback image when no valid image data is available
+    return _buildFallbackImage();
+  }
+
+  Widget _buildFallbackImage() {
     return Container(
       height: 200,
-      color: Colors.grey[300],
-      child: const Icon(
-        Icons.image,
-        size: 50,
-        color: Colors.grey,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFFF8F8F).withOpacity(0.8),
+            const Color(0xFFFF8F8F).withOpacity(0.6),
+          ],
+        ),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(16),
+        ),
+      ),
+      child: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.local_offer,
+              size: 48,
+              color: Colors.white,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Special Offer',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  void _navigateToOfferServices(Offer offer) {
+    try {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OfferServicesScreen(offer: offer),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load offer details: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -186,12 +295,7 @@ class _OffersScreenState extends State<OffersScreen> {
                             ),
                             child: InkWell(
                               onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => BranchSelectionScreen(),
-                                  ),
-                                );
+                                _navigateToOfferServices(offer);
                               },
                               borderRadius: BorderRadius.circular(16),
                               child: Column(
@@ -256,7 +360,7 @@ class _OffersScreenState extends State<OffersScreen> {
                                                       BorderRadius.circular(20),
                                                 ),
                                                 child: Text(
-                                                  'Save \$${offer.discountValue.toInt()}',
+                                                  'Save AED ${offer.discountValue.toInt()}',
                                                   style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 14,
@@ -334,13 +438,7 @@ class _OffersScreenState extends State<OffersScreen> {
                                           width: double.infinity,
                                           child: ElevatedButton(
                                             onPressed: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      BranchSelectionScreen(),
-                                                ),
-                                              );
+                                              _navigateToOfferServices(offer);
                                             },
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:

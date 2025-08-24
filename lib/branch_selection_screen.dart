@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mirrorsbeautylounge/app_colors.dart';
-import 'package:mirrorsbeautylounge/branch_map_screen.dart';
+import 'package:mirrorsbeautylounge/branches.dart';
+import 'package:mirrorsbeautylounge/models/branch.dart';
 
 class BranchSelectionScreen extends StatefulWidget {
   const BranchSelectionScreen({super.key});
@@ -239,7 +240,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                       }
                       branch['selected'] = true;
                     });
-                    Navigator.push(context, MaterialPageRoute(builder: (context)=>BranchMapScreen()));
+                    _navigateToBranchMap(branch['name']);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: branch['selected'] ? AppColors.primaryColor : Colors.white,
@@ -248,6 +249,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                       borderRadius: BorderRadius.circular(20),
                       side: BorderSide(color: AppColors.primaryColor),
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
                   child: Text(branch['selected'] ? 'Selected' : 'Select'),
                 ),
@@ -257,6 +259,51 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
         ),
       ),
     );
+  }
+
+  // Navigate to branch map screen with selected branch data
+  void _navigateToBranchMap(String branchName) {
+    // Map branch names to match the Branch model
+    String mappedBranchName;
+    switch (branchName) {
+      case 'Marina':
+        mappedBranchName = 'Marina';
+        break;
+      case 'Al Bustan':
+        mappedBranchName = 'Al Bustan Centre';
+        break;
+      case 'IBN Battuta Mall':
+        mappedBranchName = 'Batutta Mall';
+        break;
+      case 'Al Muraqqabat':
+        mappedBranchName = 'Muraqabat';
+        break;
+      case 'TECOM':
+        mappedBranchName = 'Barsha Heights';
+        break;
+      default:
+        mappedBranchName = branchName;
+    }
+
+    // Find the branch from the Branch model
+    final branch = Branch.getBranchByName(mappedBranchName);
+    
+    if (branch != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BranchMapScreen(branch: branch),
+        ),
+      );
+    } else {
+      // Show error if branch not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Branch location not available for $branchName'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildServiceIndicator(String label, bool available) {

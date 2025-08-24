@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'models/notification_model.dart';
 import 'package:intl/intl.dart';
+import 'services/auth_service.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -13,6 +14,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isLoading = false;
   String? _errorMessage;
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +144,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   // Get notifications stream for current user
   Stream<QuerySnapshot> _getNotificationsStream() {
-    String userId = 'user123'; // Replace with actual user ID from auth
+    final user = _authService.currentUser;
+    if (user == null) {
+      debugPrint('No authenticated user for notifications');
+      return const Stream.empty();
+    }
+    
+    String userId = user.uid;
+    debugPrint('Loading notifications for user: $userId');
     
     try {
       return FirebaseFirestore.instance

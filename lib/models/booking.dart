@@ -8,6 +8,7 @@ class Booking {
   final DateTime bookingDate;
   final String bookingTime;
   final String branch;
+  final String? address; // Address for home services
   final double totalPrice;
   final int totalDuration;
   final String status; // 'upcoming', 'past', 'cancelled'
@@ -25,6 +26,7 @@ class Booking {
     required this.bookingDate,
     required this.bookingTime,
     required this.branch,
+    this.address,
     required this.totalPrice,
     required this.totalDuration,
     required this.status,
@@ -44,6 +46,7 @@ class Booking {
       'bookingDate': Timestamp.fromDate(bookingDate),
       'bookingTime': bookingTime,
       'branch': branch,
+      'address': address,
       'totalPrice': totalPrice,
       'totalDuration': totalDuration,
       'status': status,
@@ -73,6 +76,7 @@ class Booking {
       bookingDate: (data['bookingDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       bookingTime: data['bookingTime'] ?? '',
       branch: data['branch'] ?? '',
+      address: data['address'],
       totalPrice: (data['totalPrice'] ?? 0).toDouble(),
       totalDuration: data['totalDuration'] ?? 0,
       status: data['status'] ?? 'upcoming',
@@ -98,6 +102,7 @@ class Booking {
           : map['bookingDate'] ?? DateTime.now(),
       bookingTime: map['bookingTime'] ?? '',
       branch: map['branch'] ?? '',
+      address: map['address'],
       totalPrice: (map['totalPrice'] ?? 0).toDouble(),
       totalDuration: map['totalDuration'] ?? 0,
       status: map['status'] ?? 'upcoming',
@@ -122,6 +127,7 @@ class Booking {
     DateTime? bookingDate,
     String? bookingTime,
     String? branch,
+    String? address,
     double? totalPrice,
     int? totalDuration,
     String? status,
@@ -139,6 +145,7 @@ class Booking {
       bookingDate: bookingDate ?? this.bookingDate,
       bookingTime: bookingTime ?? this.bookingTime,
       branch: branch ?? this.branch,
+      address: address ?? this.address,
       totalPrice: totalPrice ?? this.totalPrice,
       totalDuration: totalDuration ?? this.totalDuration,
       status: status ?? this.status,

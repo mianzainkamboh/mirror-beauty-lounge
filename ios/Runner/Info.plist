@@ -51,5 +51,14 @@
 	<string>This app needs your location to show nearby branches and services.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app requires access to your location for better service.</string>
+	
+	<!-- Google Maps API Key -->
+	<key>GMSApiKey</key>
+	<string>AIzaSyBfzCZTGyjtSNZ9vLuIyvo-q20kbENF7eQ</string>
+
+	<key>NSCameraUsageDescription</key>
+	<string>Scan your card to add it automatically</string>
+	<key>NSCameraUsageDescription</key>
+	<string>To scan cards</string>
 </dict>
 </plist>

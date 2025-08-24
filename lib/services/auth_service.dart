@@ -38,6 +38,7 @@ class AuthService {
           'email': email,
           'phoneNumber': phoneNumber,
           'gender': gender,
+          'role': 'customer', // Default role for new users
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -231,5 +232,68 @@ class AuthService {
   // Handle Firebase Auth exceptions (for backward compatibility)
   String _handleAuthException(FirebaseAuthException e) {
     return _getAuthErrorMessage(e);
+  }
+
+  // Check if current user is admin
+  Future<bool> isCurrentUserAdmin() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        final userData = await getUserData(user.uid);
+        return userData?['role'] == 'admin';
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Check if a specific user is admin
+  Future<bool> isUserAdmin(String uid) async {
+    try {
+      final userData = await getUserData(uid);
+      return userData?['role'] == 'admin';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get current user's role
+  Future<String?> getCurrentUserRole() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        final userData = await getUserData(user.uid);
+        return userData?['role'] as String?;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Set user role (admin only operation)
+  Future<void> setUserRole(String uid, String role) async {
+    try {
+      // Check if current user is admin
+      final isAdmin = await isCurrentUserAdmin();
+      if (!isAdmin) {
+        throw Exception('Only admins can modify user roles');
+      }
+      
+      await updateUserData(uid, {'role': role});
+    } catch (e) {
+      throw Exception('Failed to set user role: ${e.toString()}');
+    }
+  }
+
+  // Promote user to admin (super admin only)
+  Future<void> promoteToAdmin(String uid) async {
+    await setUserRole(uid, 'admin');
+  }
+
+  // Demote admin to customer
+  Future<void> demoteToCustomer(String uid) async {
+    await setUserRole(uid, 'customer');
   }
 }

@@ -4,12 +4,12 @@ class StripeConfig {
   
   // Live publishable key (safe to use in client-side code)
   // Updated with live key for production use
-  static const String publishableKey = 'pk_live_51PgnPgAVqidqxLYOI7TFPqsSOZvW8aOTJIKU1LyrEkWjw9T9QoBGGvLelMY1VyQsMU6XbggqZ179plGqno4sQJlE00Nrj0P81I';
+  static const String publishableKey = 'x';
   
   // Live secret key (should be kept secure)
   // WARNING: Replace with your actual live secret key from Stripe Dashboard
   // IMPORTANT: This should be handled by your backend server in production
-  static const String secretKey = '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';
+  static const String secretKey = 'x';
   
   // Production mode flag - Set to false for production with live keys
   static const bool isTestMode = false;

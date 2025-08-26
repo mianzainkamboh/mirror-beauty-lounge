@@ -3,13 +3,13 @@ class TabbyConfig {
   // Get this from your Tabby merchant dashboard
   
   // Public key for client-side integration
-  static const String publicKey = 'pk_test_7d2ba58d-faf7-401d-b555-9c0c84a2941a';
+  static const String publicKey = 'xa';
   
   // Secret key (should be kept secure - consider using environment variables)
-  static const String secretKey = 'sk_test_7b21f833-a0ee-467e-8983-b7912051de7b';
+  static const String secretKey = 'x';
   
   // Merchant code
-  static const String merchantCode = '200200002364'; // Add your actual merchant code
+  static const String merchantCode = 'x'; // Add your actual merchant code
   
   // Merchant display name
   static const String merchantName = 'Mirror Beauty Lounge';

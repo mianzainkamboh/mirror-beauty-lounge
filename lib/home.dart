@@ -35,7 +35,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Map<String, String>> branches = [
     {
-      "image": "images/1.jpeg",
+      "image": "images/6.jpg",
       "title": "Al Muraqqabat",
       "subtitle": "M03-Buhaleeba Plaza, Muraqqabat Road Dubai",
       "tag": "10am to 10pm",
@@ -47,19 +47,19 @@ class _HomePageState extends State<HomePage> {
       "tag": "10am to 10pm",
     },
     {
-      "image": "images/4.jpeg",
+      "image": "images/8.jpg",
       "title": "Al Bustan",
       "subtitle": "Al Bustan center, Al Qusais First, Dubai",
       "tag": "10am to 10pm",
     },
     {
-      "image": "images/3.jpeg",
+      "image": "images/2.jpg",
       "title": "TECOM",
       "subtitle": "API Building, AL Barsha Heights, Tecom-Dubai",
       "tag": "10am to 10pm",
     },
     {
-      "image": "images/5.jpeg",
+      "image": "images/9.jpg",
       "title": "Marina",
       "subtitle": "Jannah Hotel Apartment, Marina, Dubai",
       "tag": "10am to 10pm",

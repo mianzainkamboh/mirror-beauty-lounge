@@ -14,7 +14,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
   // Sample branch data
   final List<Map<String, dynamic>> branches = [
     {
-      "image": "images/1.jpeg",
+      "image": "images/6.jpg",
       'name': 'Al Muraqqabat',
       'address': 'M03-Buhaleeba Plaza, Muraqqabat Road Dubai',
       'timings': '10:00 AM - 10:00 PM',
@@ -32,7 +32,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
       'selected': false,
     },
     {
-      "image": "images/4.jpeg",
+      "image": "images/8.jpg",
       'name': 'Al Bustan',
       'address': 'Al Bustan center, Al Qusais First, Dubai',
       'timings': '10:00 AM - 10:00 PM',
@@ -41,7 +41,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
       'selected': false,
     },
     {
-      "image": "images/5.jpeg",
+      "image": "images/9.jpg",
       'name': 'Marina',
       'address': 'Jannah Hotel Apartment, Marina, Dubai',
       'timings': '10:00 AM - 10:00 PM',
@@ -50,7 +50,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
       'selected': false,
     },
     {
-      "image": "images/3.jpeg",
+      "image": "images/2.jpg",
       'name': 'TECOM',
       'address': 'API Building, AL Barsha Heights, Tecom-Dubai',
       'timings': '10:00 AM - 10:00 PM',
@@ -251,7 +251,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   ),
-                  child: Text(branch['selected'] ? 'Selected' : 'Select'),
+                  child: Text(branch['selected'] ? 'Selected' : 'View Location'),
                 ),
               ],
             ),

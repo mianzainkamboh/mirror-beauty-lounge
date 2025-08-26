@@ -1671,8 +1671,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       addressError = null;
                                     });
                                     
-                                    // Navigate to branch map screen
-                                    _navigateToBranchMap(branch);
+                                    // Branch selected directly without navigation
                                   }
                                 : () {
                                     // Show restriction message when trying to select unavailable branch
@@ -1899,50 +1898,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // Navigate to branch map screen with selected branch data
-  void _navigateToBranchMap(String branchName) {
-    // Map branch names to match the Branch model
-    String mappedBranchName;
-    switch (branchName) {
-      case 'Marina':
-        mappedBranchName = 'Marina';
-        break;
-      case 'Al Bustan':
-        mappedBranchName = 'Al Bustan Centre';
-        break;
-      case 'Battuta':
-        mappedBranchName = 'Batutta Mall';
-        break;
-      case 'Muraqabat':
-        mappedBranchName = 'Muraqabat';
-        break;
-      case 'Tecom':
-        mappedBranchName = 'Barsha Heights';
-        break;
-      default:
-        mappedBranchName = branchName;
-    }
-
-    // Find the branch from the Branch model
-    final branch = Branch.getBranchByName(mappedBranchName);
-    
-    if (branch != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => BranchMapScreen(branch: branch),
-        ),
-      );
-    } else {
-      // Show error if branch not found
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Branch location not available for $branchName'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  // Branch selection is now handled directly without navigation
 
   Widget _buildAddressInput() {
     return Container(

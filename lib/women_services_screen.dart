@@ -19,11 +19,11 @@ class WomenServicesScreen extends StatefulWidget {
 class _WomenServicesScreenState extends State<WomenServicesScreen> {
   // Sample branch data
   final List<Map<String, dynamic>> branches = [
-    {'name': 'Al Muraqqabat', 'image': 'images/1.jpeg',},
+    {'name': 'Al Muraqqabat', 'image': 'images/6.jpg',},
     {'name': 'IBN Battuta Mall', 'image': 'images/1.jpg'},
-    {'name': 'Marina', 'image': 'images/4.jpeg'},
-    {'name': '"Al Bustan', 'image': 'images/3.jpeg'},
-    {'name': 'Tecom-Dubai', 'image': 'images/5.jpeg'},
+    {'name': 'Marina', 'image': 'images/9.jpg'},
+    {'name': '"Al Bustan', 'image': 'images/2.jpg'},
+    {'name': 'Tecom-Dubai', 'image': 'images/8.jpg'},
   ];
 
   // Firebase categories

@@ -20,7 +20,7 @@ class _MenServicesScreenState extends State<MenServicesScreen> {
   // Branch data
   final Map<String, dynamic> branch = {
     'name': 'Marina Branch',
-    'image': 'images/5.jpeg',
+    'image': 'images/9.jpg',
     'address': 'Jannah Hotel Apartment, Marina, Dubai',
   };
 

@@ -3,10 +3,10 @@ class TamaraConfig {
   // Get this from your Tamara merchant dashboard
   
   // Public key (safe to use in client-side code)
-  static const String publicKey = '62bca9cc-4ce8-4023-9ef5-6e3119ce446d';
+  static const String publicKey = 'x';
   
   // API token for server-side authentication (keep secure)
-  static const String apiToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhY2NvdW50SWQiOiJiN2Q3OGFlMC1kYWFiLTRmNDgtODU1OC0yY2Q1ZmVmZDY3NTYiLCJ0eXBlIjoibWVyY2hhbnQiLCJzYWx0IjoiZTVlNDA4ZTYtN2RlYi00ZTk3LWJlNTQtNDg2ZTdiMWQ1OTlkIiwicm9sZXMiOlsiUk9MRV9NRVJDSEFOVCJdLCJpc010bHMiOmZhbHNlLCJpYXQiOjE3NTU4NjMwMzMsImlzcyI6IlRhbWFyYSBQUCJ9.WiuvkQHhPO0M84bD6V-WOakTXqY45TigHPcpYe_P0zBaCcoTUe7clOcblJnS0YRCNrF7Ft36vsGy4sQursfNJCg5a2YNIN3eHUBV2W8G_0xzPzoJJV2oT09QE3sqE9TpDn55OfKNHBtbyHeLfNWsxxVIJ2XDWilaIg-_bEl7hQs_ohBaiy5vBkioWlLZk8ALuTCeqQ-7Jg3jM0Idy2nHfgtpzUEGXMivDCm_XmAJ26Qvs1mu-RCYi0Ah6GEXAfaQsQ6NTUEylfvN-iKIyMXIzzxmveZJggQY40IZOx2uf9fMOUMvcTietJ1tHBI4hd4P6e7wEwgukjTTrK-IxPev0w';
+  static const String apiToken = 'x.x.x-x-xx-xx-x-x-x';
   
   // Merchant display name
   static const String merchantName = 'Mirror Beauty Lounge';

@@ -118,78 +118,7 @@ class Booking {
     );
   }
 
-  // Create a copy of Booking with updated fields
-  Booking copyWith({
-    String? id,
-    String? userId,
-    String? customerName,
-    List<BookingService>? services,
-    DateTime? bookingDate,
-    String? bookingTime,
-    String? branch,
-    String? address,
-    double? totalPrice,
-    int? totalDuration,
-    String? status,
-    String? paymentMethod,
-    bool? emailConfirmation,
-    bool? smsConfirmation,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) {
-    return Booking(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      customerName: customerName ?? this.customerName,
-      services: services ?? this.services,
-      bookingDate: bookingDate ?? this.bookingDate,
-      bookingTime: bookingTime ?? this.bookingTime,
-      branch: branch ?? this.branch,
-      address: address ?? this.address,
-      totalPrice: totalPrice ?? this.totalPrice,
-      totalDuration: totalDuration ?? this.totalDuration,
-      status: status ?? this.status,
-      paymentMethod: paymentMethod ?? this.paymentMethod,
-      emailConfirmation: emailConfirmation ?? this.emailConfirmation,
-      smsConfirmation: smsConfirmation ?? this.smsConfirmation,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  // Check if booking is past due
-  bool get isPastDue {
-    final now = DateTime.now();
-    final bookingDateTime = DateTime(
-      bookingDate.year,
-      bookingDate.month,
-      bookingDate.day,
-      _parseTime(bookingTime).hour,
-      _parseTime(bookingTime).minute,
-    );
-    return now.isAfter(bookingDateTime);
-  }
-
-  // Helper method to parse time string
-  DateTime _parseTime(String timeString) {
-    final parts = timeString.split(' ');
-    final timeParts = parts[0].split(':');
-    int hour = int.parse(timeParts[0]);
-    final minute = int.parse(timeParts[1]);
-    
-    if (parts.length > 1 && parts[1].toUpperCase() == 'PM' && hour != 12) {
-      hour += 12;
-    } else if (parts.length > 1 && parts[1].toUpperCase() == 'AM' && hour == 12) {
-      hour = 0;
-    }
-    
-    return DateTime(2000, 1, 1, hour, minute);
-  }
-
-  @override
-  String toString() {
-    return 'Booking{id: $id, customerName: $customerName, bookingDate: $bookingDate, status: $status}';
-  }
+  
 
   @override
   bool operator ==(Object other) {
@@ -218,27 +147,8 @@ class BookingService {
     required this.quantity,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'serviceId': serviceId,
-      'serviceName': serviceName,
-      'category': category,
-      'duration': duration,
-      'price': price,
-      'quantity': quantity,
-    };
-  }
+  
 
-  factory BookingService.fromMap(Map<String, dynamic> map) {
-    return BookingService(
-      serviceId: map['serviceId'] ?? '',
-      serviceName: map['serviceName'] ?? '',
-      category: map['category'] ?? '',
-      duration: map['duration'] ?? 0,
-      price: (map['price'] ?? 0).toDouble(),
-      quantity: map['quantity'] ?? 1,
-    );
-  }
 
   double get totalPrice => price * quantity;
 
